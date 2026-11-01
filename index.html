@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>קו האש</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=Assistant:wght@400;600;800&display=swap">
+<style>
+/* פריסה: במה אחת במסך מלא, מסכי תפריט צפים מעליה. עיצוב כהה אחד, בכוונה */
+:root {
+  --bg: #0b0d0a;
+  --panel: #151913;
+  --line: #2c3326;
+  --ink: #ece6d6;
+  --mute: #9a9884;
+  --amber: #e0a84a;
+  --red: #d8423a;
+  --camp: #e0a84a;
+  --display: "Karantina", "Assistant", Impact, sans-serif;
+  --body: "Assistant", "Segoe UI", Arial, sans-serif;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); }
+body { overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+#app { position: fixed; inset: 0; background: #000; }
+#stage { position: absolute; inset: 0; display: grid; place-items: center; }
+#game { display: block; touch-action: none; }
+#game.playing { cursor: none; }
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; background:
+  radial-gradient(1200px 600px at 80% -10%, rgba(224,168,74,0.10), transparent 60%),
+  linear-gradient(180deg, rgba(11,13,10,0.94), rgba(11,13,10,0.98));
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.screen.dim { background: rgba(5,6,5,0.78); backdrop-filter: blur(3px); display: grid; place-items: center; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px; display: grid; gap: 28px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 400; }
+p { margin: 0; line-height: 1.6; }
+button { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--camp); outline-offset: 3px; }
+
+/* כותרת ראשית */
+.hero { display: grid; gap: 14px; padding-top: 18px; }
+.hero .eyebrow { font-size: 15px; letter-spacing: 0.18em; color: var(--amber); font-weight: 800; }
+.hero h1 { font-family: var(--display); font-size: clamp(96px, 18vw, 200px); line-height: 0.82; letter-spacing: 0.01em; color: var(--ink);
+  text-shadow: 0 0 0 transparent; position: relative; }
+.hero h1 span { color: var(--amber); }
+.hero p { font-size: 20px; color: var(--mute); max-width: 52ch; }
+.hero .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 6px; }
+.btn { appearance: none; border: 0; cursor: pointer; padding: 14px 26px; font-weight: 800; font-size: 18px; border-radius: 4px; background: var(--camp); color: #14110a;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); transition: transform .12s, filter .12s; }
+.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); clip-path: none; }
+.keys { color: var(--mute); font-size: 15px; }
+.keys kbd { font-family: var(--body); font-weight: 800; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 1px 7px; }
+
+/* מערכות */
+.section-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.section-h h2 { font-family: var(--display); font-size: 44px; line-height: 1; }
+.section-h span { color: var(--mute); font-size: 15px; }
+#camps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; scroll-margin-top: 16px; }
+.camp { --ca: var(--amber); appearance: none; border: 0; padding: 0; background: var(--panel); text-align: right; cursor: pointer; display: grid; grid-template-rows: auto 1fr;
+  border-radius: 6px; overflow: hidden; position: relative; transition: transform .15s; box-shadow: 0 0 0 1px var(--line); }
+.camp:hover { transform: translateY(-3px); box-shadow: 0 0 0 2px var(--ca), 0 18px 40px rgba(0,0,0,0.5); }
+.camp .thumb { width: 100%; height: auto; aspect-ratio: 16/9; display: block; background: #000; max-width: 100%; }
+.camp-body { padding: 16px 18px 18px; display: grid; gap: 4px; position: relative; }
+.camp-year { position: absolute; top: -46px; right: 14px; font-family: var(--display); font-size: 54px; line-height: 1; color: var(--ca); text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
+.camp-title { font-family: var(--display); font-size: 40px; line-height: 1; }
+.camp-tag { color: var(--mute); font-size: 16px; }
+.camp-prog { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; color: var(--mute); font-variant-numeric: tabular-nums; border-top: 1px dashed var(--line); padding-top: 10px; }
+.camp-prog span:last-child { color: var(--ca); }
+
+/* הגדרות */
+.settings { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px 18px; }
+.settings label { display: flex; align-items: center; gap: 8px; font-size: 16px; cursor: pointer; }
+.settings select { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; font: inherit; }
+.settings input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--amber); }
+
+/* שלבים */
+.lv-head { display: grid; gap: 10px; }
+.lv-head .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.lv-head h2 { font-family: var(--display); font-size: clamp(56px, 10vw, 96px); line-height: 0.9; color: var(--camp); }
+.lv-head .yr { color: var(--mute); font-size: 17px; letter-spacing: 0.06em; }
+.lv-head p { font-size: 18px; max-width: 66ch; color: var(--ink); opacity: 0.88; }
+#lvlist { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.lv { appearance: none; border: 0; cursor: pointer; text-align: right; background: var(--panel); border-radius: 5px; padding: 14px 14px 12px; display: grid; gap: 4px; position: relative;
+  box-shadow: inset 0 0 0 1px var(--line); min-height: 120px; align-content: start; transition: transform .12s; }
+.lv:hover:not(:disabled) { transform: translateY(-2px); box-shadow: inset 0 0 0 2px var(--camp); }
+.lv.boss { background: linear-gradient(160deg, rgba(216,66,58,0.18), var(--panel) 60%); }
+.lv.locked { opacity: 0.4; cursor: not-allowed; }
+.lv-num { font-family: var(--display); font-size: 40px; line-height: 0.9; color: var(--camp); }
+.lv-name { font-weight: 800; font-size: 17px; line-height: 1.2; }
+.lv-place { font-size: 13px; color: var(--mute); }
+.lv-stars { margin-top: auto; padding-top: 6px; letter-spacing: 2px; }
+.lv-stars i { font-style: normal; color: #3a3f34; font-size: 16px; }
+.lv-stars i.on { color: #ffd85a; }
+
+/* תדריך */
+.brief { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: start; }
+.brief canvas { width: 100%; height: auto; max-width: 100%; aspect-ratio: 16/9; border-radius: 6px; display: block; box-shadow: 0 0 0 1px var(--line); }
+.brief .meta { display: grid; gap: 10px; min-width: 0; }
+.brief .lvlbl { color: var(--camp); font-weight: 800; letter-spacing: 0.12em; font-size: 14px; }
+.brief h2 { font-family: var(--display); font-size: clamp(54px, 8vw, 84px); line-height: 0.9; }
+.brief .place { color: var(--mute); font-size: 16px; }
+.radio { background: #0e110c; border: 1px solid var(--line); border-right: 4px solid var(--camp); padding: 14px 16px; border-radius: 4px; display: grid; gap: 6px; }
+.radio .from { font-size: 13px; color: var(--camp); font-weight: 800; letter-spacing: 0.08em; }
+.radio .text { font-size: 19px; line-height: 1.6; min-height: 6.4em; white-space: pre-wrap; }
+.arms { font-size: 15px; color: var(--mute); }
+
+/* סיכום */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 26px; display: grid; gap: 16px; width: min(760px, calc(100vw - 32px)); max-height: calc(100% - 32px); overflow-y: auto; box-sizing: border-box; }
+.panel h2 { font-family: var(--display); font-size: 64px; line-height: 0.9; color: var(--camp); }
+.panel .sub { color: var(--mute); font-size: 17px; }
+.stars { font-size: 44px; letter-spacing: 6px; }
+.star { color: #3a3f34; } .star.on { color: #ffd85a; text-shadow: 0 0 18px rgba(255,216,90,0.5); }
+#db-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 12px; display: flex; justify-content: space-between; gap: 8px; font-size: 15px; }
+.stat span { color: var(--mute); } .stat b { font-variant-numeric: tabular-nums; }
+.story { font-size: 18px; line-height: 1.65; white-space: pre-wrap; border-right: 3px solid var(--camp); padding-right: 14px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+#play-btns { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 100px); left: calc(max(10px, env(safe-area-inset-left, 0px))); display: flex; flex-direction: column; gap: 8px; z-index: 2; }
+#play-btns button { appearance: none; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.45); color: #fff; width: 42px; height: 42px; border-radius: 6px; cursor: pointer; font-size: 18px; display: grid; place-items: center; }
+#play-btns[hidden] { display: none; }
+.rot { display: none; }
+
+@media (max-width: 900px) {
+  #lvlist { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brief { grid-template-columns: 1fr; }
+  #db-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  #camps { grid-template-columns: 1fr; }
+  .hero p { font-size: 17px; }
+  .panel { padding: 18px; }
+  .panel h2 { font-size: 48px; }
+}
+@media (max-width: 700px) and (orientation: portrait) {
+  .rot { display: block; color: var(--amber); font-weight: 800; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage"><canvas id="game" width="1280" height="720" aria-label="קו האש, משחק יריות"></canvas></div>
+  <div id="play-btns"><button id="pause-btn" aria-label="השהיה">❚❚</button><button id="fs-btn" aria-label="מסך מלא">⛶</button></div>
+
+  <section class="screen" id="menu">
+    <div class="wrap">
+      <header class="hero">
+        <div class="eyebrow">משחק יריות ישראלי · 4 מערכות · 40 שלבים</div>
+        <h1>קו <span>האש</span></h1>
+        <p>מסיני של 1967 ועד פלישת חייזרים בנגב של 2090. מכוונים עם העכבר, יורים בקליק, ושומרים על בני הערובה בחיים.</p>
+        <div class="row">
+          <button class="btn" id="start-btn">בחר מערכה</button>
+          <span class="keys"><kbd>קליק</kbd> יורה · <kbd>קליק ימני</kbd> או <kbd>R</kbd> טוען · <kbd>Esc</kbd> השהיה</span>
+        </div>
+        <span class="rot">כדאי לסובב את הטלפון לרוחב</span>
+      </header>
+      <div class="section-h"><h2>המערכות</h2><span>כל מערכה עומדת בפני עצמה</span></div>
+      <div id="camps"></div>
+      <div class="settings">
+        <label for="opt-diff">רמת קושי
+          <select id="opt-diff"><option value="easy">קל</option><option value="normal">רגיל</option><option value="hard">קשה</option></select>
+        </label>
+        <label for="opt-sfx"><input type="checkbox" id="opt-sfx"> אפקטים</label>
+        <label for="opt-music"><input type="checkbox" id="opt-music"> מוזיקה</label>
+        <label for="opt-voice"><input type="checkbox" id="opt-voice"> קולות בעברית</label>
+        <label for="opt-auto"><input type="checkbox" id="opt-auto"> טעינה אוטומטית</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="levels" hidden>
+    <div class="wrap">
+      <div class="lv-head">
+        <div class="top"><span class="yr" id="lv-year"></span><button class="btn ghost" id="lv-back">חזרה למערכות</button></div>
+        <h2 id="lv-title"></h2>
+        <p id="lv-intro"></p>
+      </div>
+      <div id="lvlist"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="brief" hidden>
+    <div class="wrap">
+      <div class="brief">
+        <canvas id="br-thumb" width="640" height="360"></canvas>
+        <div class="meta">
+          <span class="lvlbl" id="br-level"></span>
+          <h2 id="br-name"></h2>
+          <span class="place" id="br-place"></span>
+          <div class="radio"><span class="from" id="br-from"></span><div class="text" id="br-text"></div></div>
+          <span class="arms" id="br-arms"></span>
+          <div class="actions"><button class="btn" id="br-go">יציאה לשטח</button><button class="btn ghost" id="br-back">חזרה</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen dim" id="debrief" hidden>
+    <div class="panel">
+      <span class="sub" id="db-level"></span>
+      <h2 id="db-title"></h2>
+      <div class="stars" id="db-stars"></div>
+      <div id="db-stats"></div>
+      <p class="story" id="db-story"></p>
+      <div class="actions"><button class="btn" id="db-next">לשלב הבא</button><button class="btn ghost" id="db-retry">שוב</button><button class="btn ghost" id="db-menu">לרשימת השלבים</button></div>
+    </div>
+  </section>
+
+  <section class="screen dim" id="over" hidden>
+    <div class="panel">
+      <h2>נפגעת</h2>
+      <p class="sub" id="go-text"></p>
+      <div class="actions"><button class="btn" id="go-retry">נסה שוב</button><button class="btn ghost" id="go-menu">לרשימת השלבים</button></div>
+    </div>
+  </section>
+
+  <section class="screen dim" id="pause" hidden>
+    <div class="panel">
+      <h2>הפסקה</h2>
+      <p class="sub">קליק ימני או R לטעינה. ירי ביד או ברגל מנטרל בלי להרוג ונותן בונוס.</p>
+      <div class="actions"><button class="btn" id="pa-resume">המשך</button><button class="btn ghost" id="pa-quit">יציאה מהשלב</button></div>
+    </div>
+  </section>
+</div>
+<script src="data.js"></script>
+<script src="art.js"></script>
+<script src="audio.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
