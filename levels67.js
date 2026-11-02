@@ -1,0 +1,272 @@
+/* קו האש: מערכת ששת הימים בתלת מימד. עשרה שלבים.
+   כל סצנה: pos = מיקום המצלמה [x, z], build = בניית המחסות בקואורדינטות מקומיות (x ימינה, d קדימה),
+   spots = נקודות הופעה, wave = סדר האויבים. {name} מוחלף בשם השחקן. */
+(function () {
+  const P = (x, d, top) => ({ k: 'pop', x, d, top: top || 1.1 });
+  const SD = (x, d, dx) => ({ k: 'side', x, d, dx });
+  const O = (x, d) => ({ k: 'open', x, d });
+  const RN = (d, x0, x1) => ({ k: 'run', d, x0, x1 });
+  const PR = (x, d, top) => ({ k: 'prone', x, d, top: top || 1.5 });
+  const WIN = (x, d, sill, w) => ({ k: 'win', x, d, sill, w: w || 0.85 });
+  // חלונות בבית: כרטיס בית ברוחב 6.69 מטר בקנה מידה 1, חלונות ב-u=0.39 ו-0.745, אדן בגובה 3.63
+  const houseWins = (x, d, s) => { s = s || 1; const w = 6.69 * s; return [WIN(x + (0.39 - 0.5) * w, d - 0.08, 3.78 * s - 0.15, 0.8 * s), WIN(x + (0.745 - 0.5) * w, d - 0.08, 3.78 * s - 0.15, 0.8 * s)]; };
+
+  const DAY = { sun: ['#fff0d6', 2.7, [-45, 40, -60]], hemi: ['#cfe0ff', '#8a6a4a', 0.55], exposure: 0.72, fog: '#c8b898', fogNear: 80, fogFar: 460, bg: '#c8d8e6', cardTint: '#f4e2d0', grade: [1.04, 1.0, 0.94] };
+  const DUSK = { sun: ['#ff9a5c', 2.7, [-50, 14, -80]], hemi: ['#8a7aa8', '#7a4a3a', 0.5], exposure: 0.86, fog: '#b07060', bg: '#c08068', cardTint: '#f0c4a8', grade: [1.06, 0.96, 0.9] };
+  const SINAI = { sun: ['#ffc590', 3.2, [-60, 26, -70]], hemi: ['#b9c9e8', '#a8784a', 0.55], exposure: 0.82, fog: '#d8a585', bg: '#e9b98c', cardTint: '#f6e0c8' };
+  const NIGHT = { sun: ['#a8b4e0', 0.9, [-30, 40, -60]], hemi: ['#46507a', '#1e1e24', 0.46], exposure: 1.15, fog: '#121a2c', fogNear: 25, fogFar: 200, bg: '#0a1020', cardTint: '#7e8cb8', bagTint: '#8a94b4', rockTint: '#55596a', dust: '#9fb4ff', puff: '#5a6070', grade: [0.97, 0.98, 1.05], night: true };
+
+  const LEVELS = [
+    // ---------- 1 ----------
+    Object.assign({}, DAY, {
+      name: 'בסיס האימונים', place: 'בסיס בדרום', sky: 'sky_range', skyY: 0.13, ground: 'sand', groundTint: '#c8a87e', loading: 'מסדרים מטרות במטווח...',
+      brief: 'יוני 1967, {name}. לפני שיוצאים, רפי רוצה לראות אותך יורה. מטרות חומות קופצות מאחורי שקי החול. הלבנות הן אזרחים, ובהן לא יורים. במטווח אף אחד לא יורה בך.',
+      debrief: 'רפי מהנהן. אתה מוכן. בלילה מגיעה הפקודה: מחר בבוקר נכנסים לסיני.',
+      scenes: [
+        { pos: [0, -4.5], name: 'מטווח ראשון', radio: 'ברוך הבא למטווח, {name}. ירה במטרות החומות, לא בלבנות.', tip: 'פגיעה בראש נותנת ניקוד כפול', noCrate: true,
+          build: A => { A.sb(-4, 9, 4.5, 4, 0.05); A.sb(4.5, 11, 4.5, 4, -0.05); A.crate(0.5, 13, 1); A.crate(-8, 14, 1, 0.3); A.sb(-1, 17, 5, 4); A.card('watchtower', 12, 30, 1, -0.2); A.card('tent', -14, 32, 1, 0.3); },
+          spots: [P(-5, 9.8), P(-3, 9.8), P(3.5, 11.8), P(5.8, 11.8), SD(0.5, 13.8, 1.4), SD(-8, 14.8, -1.4), P(-2, 17.8), P(0.5, 17.8)],
+          wave: ['target', 'target', 'targetCiv', 'target', 'target', 'target', 'targetCiv', 'target', 'target'] },
+        { pos: [3, -44], name: 'מהירות', radio: 'עכשיו מהר יותר. נסה להתכופף ולטעון.', tip: 'החזק רווח כדי להתכופף. במחסה הנשק נטען', tipTouch: 'החזק את כפתור המחסה. במחסה הנשק נטען', noCrate: true, spawnGap: 0.25, maxActiveAdd: 1,
+          build: A => { A.sb(-6, 8, 4, 4); A.sb(0, 10, 4, 4); A.sb(6, 9, 4, 4); A.crate(-3, 15, 1); A.crate(3, 16, 1); A.sb(-5, 20, 4, 4); A.sb(5, 21, 4, 4); },
+          spots: [P(-7, 8.8), P(-5, 8.8), P(-1, 10.8), P(1, 10.8), P(5, 9.8), P(7, 9.8), SD(-3, 15.8, -1.4), SD(3, 16.8, 1.4), P(-5, 20.8), P(5, 21.8)],
+          wave: ['target', 'target', 'target', 'targetCiv', 'target', 'target', 'target', 'targetCiv', 'target', 'target', 'target', 'targetCiv'] },
+        { pos: [-2, -84], name: 'חביות ורימונים', radio: 'מבחן אחרון: חבית אחת מפילה כמה מטרות. יש לך גם רימונים.', tip: 'מקשים 1 עד 4 מחליפים נשק. 4 זה רימונים', crateAt: 1, crate: 'grenade', noCrate: false, maxActiveAdd: 2,
+          build: A => { A.barrel(-3, 10); A.barrel(-2.4, 10.4); A.barrel(3, 11); A.barrel(3.6, 11.3); A.sb(-3, 12.5, 3.5, 3); A.sb(3.3, 13.5, 3.5, 3); A.crate(-8, 9, 1); A.crate(8, 10, 1); A.sb(0, 19, 6, 4); },
+          spots: [P(-3.8, 13.2, 0.85), P(-2.2, 13.2, 0.85), P(2.5, 14.2, 0.85), P(4.1, 14.2, 0.85), SD(-8, 9.8, -1.4), SD(8, 10.8, 1.4), P(-1.5, 19.8), P(1.5, 19.8)],
+          wave: ['target', 'target', 'target', 'target', 'targetCiv', 'target', 'target', 'target', 'target', 'targetCiv'] },
+      ],
+    }),
+    // ---------- 2 ----------
+    Object.assign({}, SINAI, {
+      name: 'הפריצה בסיני', place: 'סיני', sky: 'sky', ground: 'sand', loading: 'טוען את המדבר...',
+      brief: 'חמישה ביוני, שחר, {name}. הטנקים כבר פרצו קדימה, ועכשיו תורנו לנקות את מה שנשאר מאחור: עמדות בדיונות, שיירה שרופה, בונקר, מחנה אספקה ורכס. ובסוף מחכה טנק. כשהטבעת על האויב נהיית אדומה, תתכופף.',
+      debrief: 'הטנק עולה באש והעמדות נוקו. השמש כבר גבוהה מעל החולות. רפי לוחץ לך את היד: כל הכבוד, {name}.',
+      boss: { type: 'tank', scene: 5, from: [18, 55], to: [3, 22] }, bossVoice: 'tank',
+      far: [['truck', -45, -60, 1.2, true], ['truck', 42, -120, 1.2, true], ['truck', -50, -190, 1.2, true], ['truck', 48, -250, 1.2, true], ['truck', 12, -300, 1.2, true]],
+      scenes: [
+        { pos: [0, -4.5], name: 'הדיונות', radio: '{name}, השחר עולה. נקה את העמדות מאחורי שקי החול!', tip: 'החזק רווח כדי להתכופף מאחורי שקי החול', tipTouch: 'החזק את כפתור המחסה כדי להתכופף',
+          build: A => { A.sb(-5, 9.5, 5.2, 4, 0.08); A.sb(4.5, 13.5, 6, 4, -0.1); const c = A.crate(-1.4, 6, 1, 0.2); A.crate(-1.4, 6, 0.9, -0.15, c); A.crate(-0.3, 6.3, 0.9, 0.05); A.rock(9, 8.5, 1.4, 1.3); A.rock(-9.5, 18.5, 1.8, 2.2); A.rock(12, 22.5, 2.4, 4.1); A.barrel(2.4, 5.1); A.barrel(3.1, 5.6); A.card('truck', -3.5, 25.5, 1, 0.25, true); },
+          spots: [P(-5.2, 10.3), P(-3.6, 10.1), P(4.0, 14.3), P(6.2, 14.5), SD(-1.5, 7.1, -1.7), SD(-3.2, 26.7, 3.9), P(9, 9.8, 1.2), P(-9.5, 20.1, 1.5), O(2.5, 20.5), O(-7.5, 22.5), RN(19.5, -18, 18)],
+          wave: ['soldier', 'soldier', 'grenadier', 'runner', 'soldier', 'soldier', 'heavy', 'soldier'] },
+        { pos: [5.5, -46], name: 'השיירה השרופה', radio: 'שיירה שרופה לפנינו. היזהר מג׳יפים!',
+          build: A => { A.sb(-6.5, 10, 7, 4, 0.25); A.sb(6.5, 14, 5, 4, 0.1); A.rock(3.7, 8.5, 1.2, 5.5); A.rock(-11.5, 18, 1.7, 6.6); A.rock(12.5, 24, 2.6, 7.7); A.crate(4, 5, 1, 0.4); A.crate(4.9, 5.2, 0.85, 0.1); A.barrel(-4, 4); A.barrel(-3.4, 4.6); A.barrel(-3.8, 5.2); A.card('truck', 10.5, 28, 0.9, -0.5, true); },
+          spots: [P(-7.9, 10.9), P(-4.7, 10.3), P(6, 14.8), P(8, 14.9), SD(4.5, 6, 1.7), SD(9.7, 29.4, -3.6), P(3.7, 9.6, 1.0), P(-11.5, 19.6, 1.4), O(1.5, 24), O(-7.5, 23), RN(22, -20, 18)],
+          wave: ['soldier', 'officer', 'soldier', 'heavy', 'jeep', 'grenadier', 'runner', 'soldier', 'soldier', 'heavy'] },
+        { pos: [2, -88], name: 'הגדר והבונקר', radio: 'גדר תיל ובונקר. זרוק רימון לתוך החרך!', crateAt: 3, crate: 'grenade',
+          build: A => { A.card('wire', -6, 9, 1, 0.05); A.card('wire', 6, 9.5, 1, -0.05); A.sb(-7, 14, 5, 4, 0.1); A.sb(7.5, 15, 5, 4, -0.1); const c = A.crate(-3, 7, 1, 0.1); A.crate(-3, 7, 0.9, 0.3, c); A.crate(-2.1, 7.3, 0.9, -0.1); A.barrel(5, 7.5); A.barrel(5.6, 7.9); A.barrel(4.6, 8.2); A.rock(-13, 16, 2.0, 3.3); A.rock(13, 19, 2.2, 8.1); },
+          spots: [P(-8.2, 14.8), P(-6, 14.6), P(6.3, 15.8), P(8.6, 15.9), SD(-3.1, 8.1, -1.7), P(-13, 17.7, 1.7), O(-4, 25), O(5, 26), RN(12, -16, 16)],
+          wave: [{ t: 'bunker', x: 0, d: 21 }, 'soldier', 'soldier', 'grenadier', 'soldier', 'officer', 'heavy', 'soldier'] },
+        { pos: [-3, -128], name: 'מחנה האספקה', radio: 'מחנה אספקה. החביות מלאות דלק, תירה בהן!',
+          build: A => { A.card('tent', -7, 16, 1, 0.3, true); A.card('tent', 7, 19, 1, -0.3, true); const a = A.crate(-2, 7, 1, 0.1); A.crate(-2, 7, 0.9, -0.2, a); const b = A.crate(2, 9, 1, -0.2); A.crate(2, 9, 0.85, 0.15, b); A.crate(-5, 10, 1, 0.5); A.crate(0.5, 13, 0.9, 0); A.barrel(4, 7); A.barrel(4.6, 7.4); A.barrel(3.4, 7.6); A.barrel(-8, 11); A.barrel(-7.3, 11.4); A.barrel(-7.7, 12); A.sb(0, 15.5, 4.5, 4, 0); A.card('truck', 10, 25, 1, -0.4, true); },
+          spots: [SD(-7, 17.2, 3.4), SD(-7, 17.6, -4.4), SD(7, 20.2, -3.2), SD(-2, 7.9, -1.6), SD(2, 9.9, 1.6), P(-1, 16.3), P(1.2, 16.4), O(-1, 23), O(5, 27), RN(19, -16, 16)],
+          wave: ['soldier', 'soldier', 'officer', 'grenadier', 'runner', 'soldier', 'heavy', 'soldier', 'grenadier', 'soldier'] },
+        { pos: [4, -168], name: 'הרכס', radio: 'הם שוכבים על הרכס. חפש ראשים מעל הסלעים!',
+          build: A => { A.rock(-8, 15, 2.6, 2.7); A.rock(-1, 16, 2.2, 3.9); A.rock(6, 15, 2.8, 5.1); A.rock(13, 18, 2.4, 6.3); A.sb(-3, 8, 4.5, 4, 0.05); A.crate(4, 7, 1, 0.3); A.barrel(-7, 6.5); A.barrel(-6.4, 6.9); },
+          spots: [PR(-8, 16.9, 2.2), PR(-1, 17.6, 1.9), PR(6, 16.9, 2.4), PR(13, 19.8, 2.0), P(-4, 8.8), P(-2, 8.7), SD(4.2, 7.9, 1.6), SD(-8, 16.8, -6), SD(13, 19.8, 5.6), RN(11, -16, 16)],
+          wave: ['prone', 'soldier', 'prone', 'runner', 'officer', 'prone', 'heavy', 'soldier', 'grenadier', 'prone'] },
+        { pos: [-1, -208], name: 'השריון', radio: 'שרשראות! משהו כבד מתקרב.',
+          build: A => { A.sb(-6, 7, 5, 4, -0.2); A.sb(6, 6, 4, 4, 0.15); A.rock(-13, 18, 2.2, 8.8); A.rock(11, 21, 1.8, 9.9); A.barrel(9, 12); A.barrel(9.6, 12.4); A.card('truck', -11, 35, 1, 0.5, true); },
+          spots: [P(-7, 7.7), P(6.5, 6.7), P(-13, 19.7, 1.7), P(11, 22.5, 1.4), SD(-10.5, 36.3, 3.4), RN(15, -16, 16)],
+          wave: ['soldier', 'soldier', 'heavy', 'soldier', 'soldier'] },
+      ],
+    }),
+    // ---------- 3 ----------
+    Object.assign({}, DAY, {
+      name: 'הדרך המערבית', place: 'סיני', sky: 'sky_day', skyY: 0.33, ground: 'sand', groundTint: '#caa878', loading: 'מנקים את הכביש...',
+      brief: 'שיירת אספקה שלנו נתקעה בכביש, {name}. יחידות ממונעות מנסות לחסום את הדרך. היזהר מג׳יפים עם מקלעים, ותפוצץ כל מחסום שעומד בדרך.',
+      debrief: 'השיירה ממשיכה לנוע. נהג משאית זורק לך ארגז תפוזים מתוך החלון.',
+      far: [['truck', -40, -70, 1.2, true], ['truck', 45, -150, 1.2, false], ['tank', -55, -200, 0.9, true]],
+      scenes: [
+        { pos: [0, -4.5], name: 'השיירה התקועה', radio: 'השיירה תקועה בכביש, {name}. פנה את הדרך!',
+          build: A => { A.card('truck', -6, 16, 1, 0.3, true); A.card('truck', 5.5, 22, 0.9, -0.4, true); A.sb(-1, 9, 5, 4); A.barrel(3, 6); A.barrel(3.6, 6.4); A.crate(-4, 6.5, 1, 0.2); A.rock(10, 12, 1.6, 1.1); A.rock(-11, 24, 2.2, 2.4); },
+          spots: [P(-2.5, 9.8), P(0.5, 9.8), SD(-6, 17.3, 3.6), SD(5.5, 23.2, -3.6), SD(-4, 7.4, -1.6), P(10, 13.3, 1.3), O(0.5, 26), O(-2.5, 29), RN(19, -18, 18)],
+          wave: ['soldier', 'soldier', 'runner', 'soldier', 'heavy', 'grenadier', 'soldier', 'officer'] },
+        { pos: [6, -46], name: 'ג׳יפים בדיונות', radio: 'ג׳יפים מגיעים מהדיונות!', crateAt: 4,
+          build: A => { A.sb(-5, 9, 6, 4, 0.2); A.sb(6, 12, 5, 4, -0.1); A.rock(1, 7, 1.3, 3.3); A.rock(-12, 17, 2.0, 4.4); A.crate(9, 7, 1, 0.3); A.crate(9.9, 7.2, 0.85); A.barrel(-8, 6); A.barrel(-7.4, 6.4); },
+          spots: [P(-6.5, 9.8), P(-3.5, 9.6), P(5, 12.8), P(7, 12.8), SD(9, 7.9, 1.6), P(1, 8.1, 1.0), O(0, 26), O(-6, 27), RN(22, -20, 20)],
+          wave: ['soldier', 'jeep', 'soldier', 'officer', 'runner', 'jeep', 'soldier', 'heavy'] },
+        { pos: [2, -88], name: 'המחסום', radio: 'מחסום על הכביש. תפוצץ את החביות!',
+          build: A => { for (let k = -3; k <= 3; k++) A.barrel(k * 0.9, 11 + (k % 2) * 0.3); A.sb(-2.5, 13.5, 4, 4); A.sb(3, 14, 4, 4); A.card('hedgehog', -8, 10, 1, 0.2); A.card('hedgehog', 8, 10.5, 1, -0.3); A.card('hedgehog', -4.5, 9, 0.8, 0.5); A.crate(-9, 15, 1, 0.3); A.card('truck', 10, 24, 1, -0.5, true); },
+          spots: [P(-3.6, 14.2), P(-1.4, 14.2), P(2, 14.7), P(4, 14.7), SD(-9, 15.9, -1.6), SD(10, 25.2, -3.6), O(-3, 25), O(4, 27), RN(19, -18, 18)],
+          wave: ['soldier', 'soldier', 'soldier', 'grenadier', 'heavy', 'soldier', 'officer', 'grenadier'] },
+        { pos: [-3, -130], name: 'השיירה השנייה', radio: 'עוד שיירה של ג׳יפים. אל תיתן להם לעבור!', jeepD: 17,
+          build: A => { A.sb(-4, 8, 5, 4, 0.1); A.sb(5, 9, 4, 4, -0.1); A.rock(-10, 13, 1.8, 7.1); A.rock(11, 15, 2.0, 8.2); A.card('truck', 0, 28, 1, 0.1, true); A.barrel(8, 6); A.barrel(8.6, 6.3); },
+          spots: [P(-5, 8.8), P(-3, 8.8), P(4, 9.8), P(6, 9.8), P(-10, 14.4, 1.4), SD(0, 29.2, 3.8), SD(0, 29.2, -3.8), RN(21, -18, 18)],
+          wave: ['jeep', 'soldier', 'jeep', 'heavy', 'soldier', 'runner', 'jeep', 'officer'] },
+      ],
+    }),
+    // ---------- 4 ----------
+    Object.assign({}, DUSK, {
+      name: 'מעבר ההרים', place: 'מעברי סיני', sky: 'sky_canyon', skyY: 0.17, ground: 'sand', groundTint: '#c9997a', rockTint: '#a86a4c', puff: '#c09070', hills: 30, loading: 'נכנסים למעבר...',
+      brief: 'המעבר הצר בין ההרים הוא מלכודת, {name}. צלפים על הסלעים, רימונים מלמעלה ועמדת מקלע בסוף. צריך לפתוח אותו לפני שהחושך יורד.',
+      debrief: 'המעבר פתוח. מרחוק נשמע רעש של שרשראות. משהו כבד מתקרב.',
+      scenes: [
+        { pos: [0, -4.5], name: 'פתח המעבר', radio: 'צלפים על הסלעים. חפש ראשים מעל האבנים!',
+          build: A => { A.rock(-13, 14, 5.5, 1.2, 1.6); A.rock(14, 18, 6, 2.3, 1.5); A.rock(-4.5, 12, 2.2, 3.1); A.rock(5, 15, 2.0, 4.6); A.sb(0, 8.5, 4, 4); A.barrel(-7, 7); A.barrel(-6.4, 7.4); },
+          spots: [PR(-4.5, 13.6, 1.9), PR(5, 16.6, 1.7), P(-1, 9.3), P(1, 9.3), SD(-4.5, 12.6, 4.5), SD(5, 15.6, -4.6), O(0.5, 24), RN(19, -9, 9)],
+          wave: ['prone', 'soldier', 'prone', 'grenadier', 'soldier', 'heavy', 'prone', 'soldier'] },
+        { pos: [2, -46], name: 'המעבר הצר', radio: 'המעבר נעשה צר. היזהר מרימונים מלמעלה.',
+          build: A => { A.rock(-11, 16, 5, 5.2, 1.7); A.rock(12, 14, 5.5, 6.3, 1.6); A.rock(-2, 14, 2.4, 7.4); A.rock(4.5, 18, 2.2, 8.5); const c = A.crate(-5, 7, 1, 0.2); A.crate(-5, 7, 0.9, 0.1, c); A.barrel(5, 8); A.barrel(5.6, 8.3); },
+          spots: [PR(-2, 15.6, 2.0), PR(4.5, 19.7, 1.9), SD(-5, 7.9, -1.6), SD(-2, 14.6, 4.6), O(1.2, 26), RN(21, -7, 8)],
+          wave: ['grenadier', 'prone', 'soldier', 'grenadier', 'officer', 'prone', 'soldier', 'runner'] },
+        { pos: [-1, -88], name: 'עמדת המקלע', radio: 'עמדת מקלע בסוף המעבר!', crateAt: 3, crate: 'grenade',
+          build: A => { A.rock(-12, 15, 5.5, 9.6, 1.6); A.rock(12, 17, 5.5, 1.7, 1.6); A.sb(-3, 16, 3.5, 5, 0.1); A.sb(3, 16.3, 3.5, 5, -0.1); A.sb(-5, 9, 3.5, 4); A.crate(5, 9, 1, 0.3); A.barrel(0, 11); A.barrel(0.6, 11.3); },
+          spots: [P(-4, 16.8), P(-2, 16.8), P(2, 17.1), P(4, 17.1), P(-5.5, 9.8), SD(5, 9.9, 1.6), O(0, 27), RN(21, -8, 8)],
+          wave: [{ t: 'bunker', x: 0, d: 24, hp: 34 }, 'heavy', 'soldier', 'soldier', 'grenadier', 'heavy', 'soldier'] },
+        { pos: [1, -130], name: 'היציאה מהמעבר', radio: 'עוד קצת והחושך יורד. קדימה!', jeepD: 19,
+          build: A => { A.rock(-14, 18, 5, 2.8, 1.4); A.rock(15, 20, 5, 3.9, 1.4); A.sb(-4, 9, 5, 4); A.sb(5, 11, 4, 4); A.rock(0, 15, 1.6, 5.2); A.card('truck', -8, 27, 1, 0.4, true); },
+          spots: [P(-5, 9.8), P(-3, 9.8), P(4, 11.8), P(6, 11.8), PR(0, 16.4, 1.4), SD(-8, 28.2, 3.8), O(4, 26), RN(22, -14, 14)],
+          wave: ['jeep', 'soldier', 'prone', 'heavy', 'soldier', 'officer', 'runner', 'soldier'] },
+      ],
+    }),
+    // ---------- 5 ----------
+    Object.assign({}, SINAI, {
+      name: 'קרב השריון', place: 'סיני', sky: 'sky', ground: 'sand', exposure: 0.86, cardTint: '#f2d2b6', loading: 'שומעים שרשראות...',
+      brief: 'טנק כבד חוסם את הדרך לתעלה, {name}. אין לך שריון, רק את מה שביד. קודם מנקים את החיילים שמלווים אותו, ואז כוון לצריח ולמקלע. את הפגזים שלו אפשר ליירט באוויר.',
+      debrief: 'הטנק עולה באש. הדרך לתעלה פתוחה. בקשר מודיעים: הגדוד מועבר מיד לירושלים.',
+      boss: { type: 'tank', scene: 2, from: [20, 58], to: [2, 21], hpAdd: 15 }, bossVoice: 'tank',
+      far: [['truck', -40, -40, 1.2, true], ['tank', 45, -110, 0.9, true], ['truck', -45, -150, 1.2, true]],
+      scenes: [
+        { pos: [0, -4.5], name: 'שדה ההריסות', radio: 'הטנק לא לבד. נקה קודם את החיילים שלו.',
+          build: A => { A.card('truck', -7, 18, 1, 0.3, true); A.card('truck', 6, 24, 1, -0.4, true); A.sb(-2, 9, 5, 4); A.sb(5, 12, 4, 4); A.rock(-11, 12, 1.8, 2.2); A.barrel(2, 6); A.barrel(2.6, 6.4); A.crate(-6, 6, 1, 0.3); },
+          spots: [P(-3.5, 9.8), P(-0.5, 9.8), P(4, 12.8), P(6, 12.8), SD(-7, 19.3, 3.6), SD(6, 25.2, -3.6), SD(-6, 6.9, -1.6), P(-11, 13.4, 1.4), O(1, 27), RN(19, -18, 18)],
+          wave: ['soldier', 'soldier', 'heavy', 'soldier', 'grenadier', 'soldier', 'runner', 'soldier'] },
+        { pos: [5, -46], name: 'ליווי השריון', radio: 'ג׳יפ ליווי! השמד אותו לפני שהטנק מגיע.',
+          build: A => { A.sb(-5, 9, 6, 4, 0.15); A.sb(6, 13, 5, 4, -0.1); A.rock(2, 7, 1.3, 3.6); A.rock(12, 20, 2.4, 4.7); A.crate(-9, 7, 1, 0.3); A.barrel(9, 7); A.barrel(9.6, 7.3); A.card('tank', -12, 34, 1, 0.5, true, '#6a5a4a'); },
+          spots: [P(-6.5, 9.8), P(-3.5, 9.7), P(5, 13.8), P(7, 13.8), SD(-9, 7.9, -1.6), P(2, 8.1, 1.0), P(12, 21.6, 1.8), O(-2, 26), RN(22, -18, 18)],
+          wave: ['soldier', 'jeep', 'soldier', 'officer', 'runner', 'heavy', 'soldier', 'grenadier'] },
+        { pos: [-1, -90], name: 'הטנק', radio: 'הנה הוא! כוון לצריח ולמקלע!',
+          build: A => { A.sb(-6, 7, 5, 4, -0.2); A.sb(6, 6.5, 4, 4, 0.15); A.rock(-13, 17, 2.2, 6.6); A.rock(12, 19, 1.8, 7.7); A.barrel(8, 13); A.barrel(8.6, 13.4); A.barrel(-7, 15); A.barrel(-6.4, 15.3); },
+          spots: [P(-7, 7.7), P(6.5, 7.2), P(-13, 18.7, 1.7), P(12, 20.5, 1.4), RN(15, -16, 16)],
+          wave: ['soldier', 'soldier', 'grenadier', 'soldier'] },
+      ],
+    }),
+    // ---------- 6 ----------
+    Object.assign({}, NIGHT, {
+      name: 'גבעת התעלות', place: 'צפון ירושלים', sky: 'sky_night', skyY: 0.22, ground: 't_basalt', groundTint: '#8a8a96', groundRepeat: 110, loading: 'עולים לגבעה בחושך...',
+      brief: 'לילה, {name}. גבעה מבוצרת עם תעלות קשר עמוקות. הם יקפצו מהתעלות בלי אזהרה. מדי פעם יאירו את השמיים בזיקוקי תאורה, אז תנצל את האור.',
+      debrief: 'עם שחר הגבעה בידינו. החבר׳ה יושבים בשקט, עייפים מכדי לדבר.',
+      scenes: [
+        { pos: [0, -4.5], name: 'גדר התיל', radio: 'גדר תיל ותעלות. הם בתוך האדמה, {name}. תסתכל טוב.',
+          build: A => { A.card('wire', -4, 7, 1, 0.05); A.card('wire', 5, 7.5, 1, -0.05); A.sb(-3, 11, 8, 2); A.sb(6, 15, 7, 2); A.sb(-6, 19, 6, 2); A.crate(9, 9, 1, 0.3); },
+          spots: [P(-6, 11.8, 0.6), P(-3, 11.8, 0.6), P(0, 11.8, 0.6), P(4, 15.8, 0.6), P(7, 15.8, 0.6), P(-7, 19.8, 0.6), P(-4, 19.8, 0.6), SD(9, 9.9, 1.6), RN(23, -14, 14)],
+          wave: ['soldier', 'soldier', 'soldier', 'grenadier', 'soldier', 'heavy', 'soldier', 'soldier'] },
+        { pos: [3, -44], name: 'תעלת הקשר', radio: 'בונקר בראש התעלה. רימון לחרך!', crateAt: 3, crate: 'grenade',
+          build: A => { A.sb(-2, 10, 9, 2, 0.1); A.sb(4, 16, 8, 2, -0.1); A.sb(-4, 21, 6, 2); A.card('wire', 0, 7, 1); A.crate(-8, 8, 1, 0.3); A.rock(10, 12, 1.6, 4.4, 1.2); },
+          spots: [P(-5, 10.8, 0.6), P(-2, 10.8, 0.6), P(1, 10.8, 0.6), P(2, 16.8, 0.6), P(5, 16.8, 0.6), P(-5, 21.8, 0.6), SD(-8, 8.9, -1.6), P(10, 13.4, 1.4)],
+          wave: [{ t: 'bunker', x: 1, d: 26, hp: 30 }, 'soldier', 'soldier', 'grenadier', 'soldier', 'grenadier', 'soldier'] },
+        { pos: [-2, -84], name: 'עמדות המקלע', radio: 'מקלעים בתעלה. תתכופף כשהם יורים!',
+          build: A => { A.sb(-5, 9, 5, 3, 0.25); A.sb(3, 12, 6, 2, -0.2); A.sb(-2, 17, 7, 2, 0.15); A.sb(5, 22, 5, 2); A.card('wire', 7, 8, 1, -0.2); A.crate(-9, 13, 1, 0.3); A.barrel(0, 7); A.barrel(0.6, 7.3); },
+          spots: [P(-6, 9.8, 0.85), P(-4, 9.8, 0.85), P(2, 12.8, 0.6), P(5, 12.8, 0.6), P(-4, 17.8, 0.6), P(0, 17.8, 0.6), P(5, 22.8, 0.6), SD(-9, 13.9, -1.6)],
+          wave: ['soldier', 'heavy', 'soldier', 'officer', 'grenadier', 'soldier', 'heavy', 'soldier'] },
+        { pos: [1, -124], name: 'ראש הגבעה', radio: 'זה ראש הגבעה. עוד מאמץ אחד!', clear: 'הגבעה בידינו! עכשיו מחכים לשחר.',
+          build: A => { A.sb(0, 14, 10, 4); A.sb(-7, 11, 4, 3, 0.4); A.sb(7, 11, 4, 3, -0.4); A.sb(-3, 7, 3, 3); A.crate(4, 7, 1, 0.2); A.barrel(-1, 20); A.barrel(-0.4, 20.3); A.card('wire', 0, 4.5, 1); },
+          spots: [P(-4, 14.8), P(-1, 14.8), P(2, 14.8), P(4.5, 14.8), P(-7, 11.8, 0.85), P(7, 11.8, 0.85), SD(4, 7.9, 1.6), O(0, 24), RN(19, -12, 12)],
+          wave: ['soldier', 'soldier', 'heavy', 'grenadier', 'soldier', 'officer', 'soldier', 'grenadier', 'heavy', 'soldier'] },
+      ],
+    }),
+    // ---------- 7 ----------
+    Object.assign({}, DAY, {
+      name: 'סמטאות העיר העתיקה', place: 'ירושלים', sky: 'sky_city', skyY: 0.2, ground: 't_paving', groundTint: '#efe0c4', groundRepeat: 70, hills: 6, civilians: true,
+      sun: ['#ffc8a0', 2.9, [-50, 22, -70]], hemi: ['#d8c4d8', '#a08870', 0.62], exposure: 0.84, fog: '#d8b8a8', bg: '#e8c0a8', cardTint: '#f6e2cc', puff: '#d8c8b0', loading: 'נכנסים לסמטאות...',
+      brief: 'הסמטאות צרות והחלונות גבוהים, {name}. אויבים בחלונות ומאחורי קירות אבן, ותושבים שלא הספיקו להסתתר. ירי רק במי שמאיים עליך. כל פגיעה באזרח עולה לך בחיים.',
+      debrief: 'אתה עומד מול האבנים העתיקות. מישהו תוקע בשופר. גם הלוחמים הקשוחים ביותר בוכים.',
+      scenes: [
+        { pos: [0, -4.5], name: 'הסמטה', radio: 'חלונות מעל, אזרחים בסמטה. תסתכל לפני שאתה יורה, {name}.', tip: 'אזרחים מסומנים בכיתוב אל תירו', crateAt: 8,
+          build: A => { A.wall(-6.5, 15, 24, 5.5, Math.PI / 2, 0.8); A.wall(6.5, 15, 24, 5.5, Math.PI / 2, 0.8); A.card('house', -3.35, 27, 1, 0, true); A.card('house', 3.35, 27.3, 1, 0, true); A.wall(0, 13, 3.2, 1.1, 0, 0.6); A.crate(-4, 8, 1, 0.2); A.barrel(4, 8.5); A.barrel(4.6, 8.8); A.crate(4.5, 17, 1, 0.3); },
+          spots: [...houseWins(-3.35, 27), ...houseWins(3.35, 27.3), P(-0.8, 13.7), P(0.8, 13.7), SD(-4, 8.9, 1.5), SD(4.5, 17.9, -1.5), O(0, 22), RN(20, -5, 5)],
+          wave: ['soldier', 'civ', 'win', 'soldier', 'win', { t: 'civ', run: true }, 'grenadier', 'win', 'soldier', 'civ', 'officer', 'win'] },
+        { pos: [0, -44], name: 'השוק', radio: 'השוק מלא אנשים. יורים רק במי שמחזיק נשק!', crateAt: 6,
+          build: A => { A.wall(-10, 16, 26, 5.5, Math.PI / 2, 0.8); A.wall(10, 16, 26, 5.5, Math.PI / 2, 0.8); A.card('arch', 0, 30, 1.1, 0, true); A.card('tent', -6, 12, 0.8, 0.2, true); A.card('tent', 6, 15, 0.8, -0.2, true); A.crate(-2, 9, 1, 0.2); A.crate(2.5, 10, 1, -0.2); A.crate(0, 18, 1); A.barrel(-7.5, 20); A.card('house', -6.5, 26, 0.9, 0.15, true); A.card('house', 6.5, 26.5, 0.9, -0.15, true); },
+          spots: [SD(-6, 12.8, 2.6), SD(6, 15.8, -2.6), SD(-2, 9.9, -1.5), SD(2.5, 10.9, 1.5), SD(0, 18.9, 1.5), O(0, 28), O(-3, 24), RN(21, -7, 7)],
+          wave: ['soldier', 'civ', 'soldier', { t: 'civ', run: true }, 'heavy', 'soldier', 'civ', 'officer', 'grenadier', { t: 'civ', run: true }, 'soldier'] },
+        { pos: [0, -84], name: 'הבתים', radio: 'צלפים בחלונות משני הצדדים!', crateAt: 5,
+          build: A => { A.wall(-7, 16, 26, 5.5, Math.PI / 2, 0.8); A.wall(7, 16, 26, 5.5, Math.PI / 2, 0.8); A.card('house', -4.4, 14, 0.85, 0, true); A.card('house', 4.4, 22, 0.85, 0, true); A.card('house', 0, 34, 0.9, 0, true); A.wall(2.5, 9, 3, 1.1, 0, 0.6); A.crate(-1, 18, 1, 0.3); A.barrel(5, 15); A.barrel(5.5, 15.3); },
+          spots: [...houseWins(-4.4, 14, 0.85), ...houseWins(4.4, 22, 0.85), ...houseWins(0, 34, 0.9), P(1.8, 9.7), P(3.2, 9.7), SD(-1, 18.9, 1.5), RN(19, -5, 6)],
+          wave: ['win', 'soldier', 'win', 'civ', 'win', 'soldier', 'win', { t: 'civ', run: true }, 'grenadier', 'win', 'soldier'] },
+        { pos: [0, -124], name: 'החומה', radio: 'החומה מולך. הם על החומה ובשער!', clear: 'השער פתוח. העיר העתיקה בידינו.',
+          build: A => { A.card('arch', 0, 24, 1.25, 0, true); A.wall(-9.5, 24, 12, 6.2, 0, 1.2); A.wall(9.5, 24, 12, 6.2, 0, 1.2); A.wall(-4, 11, 3, 1.1, 0.1, 0.6); A.wall(4, 13, 3, 1.1, -0.1, 0.6); A.crate(0, 8, 1); A.barrel(-7, 16); A.barrel(-6.4, 16.3); },
+          spots: [PR(-7, 24.9, 6.0), PR(-12, 24.9, 6.0), PR(8, 24.9, 6.0), PR(12, 24.9, 6.0), P(-4.8, 11.7), P(-3.2, 11.7), P(3.2, 13.7), P(4.8, 13.7), O(0, 22.4), SD(0, 8.9, 1.5)],
+          wave: ['prone', 'soldier', 'prone', 'civ', 'soldier', 'prone', 'heavy', 'officer', 'prone', 'grenadier', 'soldier'] },
+      ],
+    }),
+    // ---------- 8 ----------
+    Object.assign({}, DAY, {
+      name: 'העלייה לרמה', place: 'רמת הגולן', sky: 'sky_golan', skyY: 0.08, ground: 't_grass', groundTint: '#c8c4a0', groundRepeat: 100, rockTint: '#45454a', hills: 28, puff: '#a09878',
+      sun: ['#fff4dc', 3.2, [-40, 50, -60]], hemi: ['#bcd4ff', '#5a6a3a', 0.65], fog: '#c8d8e8', fogNear: 60, fogFar: 380, bg: '#cfe0f0', loading: 'מטפסים לרמה...',
+      brief: 'תשעה ביוני, {name}. שנים הפגיזו מכאן את יישובי העמק. עכשיו עולים. השטח בזלת וקוצים, והם יורים מלמעלה, ממגדלים, מסלעים ומבונקרים.',
+      debrief: 'הגעתם לרכס. מתחתיכם רואים את הכנרת נוצצת. רפי אומר שזה עוד לא נגמר.',
+      scenes: [
+        { pos: [0, -4.5], name: 'שדה הבזלת', radio: 'סלעי בזלת בכל מקום. הם מסתתרים מאחוריהם, {name}.',
+          build: A => { A.rock(-6, 10, 1.8, 1.4); A.rock(4, 12, 1.6, 2.5); A.rock(10, 18, 2.4, 3.6); A.rock(-11, 20, 2.2, 4.7); A.card('hedgehog', -1, 8, 1, 0.3); A.card('hedgehog', 7, 9, 1, -0.4); A.card('wire', 0, 15, 1); A.sb(-2, 19, 5, 4); },
+          spots: [PR(-6, 11.4, 1.5), PR(4, 13.3, 1.4), P(10, 19.7, 1.9), PR(-11, 21.7, 1.8), SD(-6, 10.6, -2.9), SD(4, 12.6, 2.6), P(-3, 19.8), P(-1, 19.8), O(4, 27), RN(16, -14, 14)],
+          wave: ['soldier', 'prone', 'soldier', 'grenadier', 'prone', 'heavy', 'soldier', 'officer'] },
+        { pos: [4, -46], name: 'המגדל', radio: 'צלף במגדל השמירה!',
+          build: A => { A.card('watchtower', 6, 24, 1, -0.1, true); A.rock(-5, 10, 1.7, 5.8); A.rock(1, 14, 1.5, 6.9); A.sb(7, 11, 4, 4, -0.2); A.card('hedgehog', -9, 13, 1, 0.2); A.crate(-2, 7, 1, 0.3); A.barrel(10, 16); A.barrel(10.5, 16.3); },
+          spots: [WIN(6, 23.8, 2.7, 2.0), PR(-5, 11.4, 1.5), PR(1, 15.3, 1.3), P(6, 11.8), P(8, 11.8), SD(-2, 7.9, -1.6), SD(-5, 10.6, -2.8), O(-3, 25), RN(19, -14, 14)],
+          wave: ['win', 'soldier', 'prone', 'soldier', 'win', 'grenadier', 'heavy', 'soldier', 'win'] },
+        { pos: [-2, -88], name: 'הבונקר הראשון', radio: 'בונקר בזלת. רימון לחרך!', crateAt: 3, crate: 'grenade',
+          build: A => { A.sb(-5, 10, 5, 3, 0.2); A.sb(4, 13, 6, 2, -0.1); A.card('wire', -1, 7, 1); A.rock(-11, 16, 2.0, 7.3); A.rock(10, 18, 1.8, 8.4); A.crate(7, 7, 1, 0.3); },
+          spots: [P(-6, 10.8, 0.85), P(-4, 10.8, 0.85), P(3, 13.8, 0.6), P(6, 13.8, 0.6), P(-11, 17.6, 1.7), SD(7, 7.9, 1.6), RN(17, -12, 12)],
+          wave: [{ t: 'bunker', sprite: 'bunkerB', x: 0, d: 23, hp: 34 }, 'soldier', 'soldier', 'grenadier', 'soldier', 'officer', 'heavy'] },
+        { pos: [2, -130], name: 'הרכס', radio: 'הרכס מעלינו. קדימה!', jeepD: 20, clear: 'הגענו לרכס! תראו את הכנרת למטה.',
+          build: A => { A.rock(-9, 16, 2.6, 9.5); A.rock(-1, 17, 2.4, 1.6); A.rock(7, 16, 2.6, 2.7); A.sb(-3, 8, 4, 4); A.sb(5, 9, 4, 4); A.card('hedgehog', 11, 11, 1, -0.3); A.barrel(0, 6); A.barrel(0.6, 6.3); },
+          spots: [PR(-9, 17.9, 2.2), PR(-1, 18.7, 2.0), PR(7, 17.9, 2.2), P(-4, 8.8), P(-2, 8.8), P(4, 9.8), P(6, 9.8), RN(12, -14, 14)],
+          wave: ['prone', 'soldier', 'jeep', 'prone', 'officer', 'soldier', 'prone', 'heavy', 'grenadier'] },
+      ],
+    }),
+    // ---------- 9 ----------
+    Object.assign({}, DUSK, {
+      name: 'מוצבי הבזלת', place: 'רמת הגולן', sky: 'sky_golan_dusk', skyY: 0.1, ground: 't_basalt', groundTint: '#a89c94', groundRepeat: 110, rockTint: '#3e3a38', hills: 26, puff: '#7a6a60',
+      hemi: ['#9a7a8a', '#3a2a24', 0.5], fog: '#7a4a3a', bg: '#a05a3a', loading: 'מתקרבים למוצבים...',
+      brief: 'שורת מוצבים מבוצרים מבזלת ובטון, {name}. כל מוצב נלחם עד הסוף. רימונים יעזרו לך לנקות תעלות ובונקרים.',
+      debrief: 'המוצבים נופלים אחד אחרי השני. נשאר רק אחד, הגדול מכולם.',
+      startWeapons: ['grenade'],
+      scenes: [
+        { pos: [0, -4.5], name: 'המוצב הראשון', radio: 'המוצב הראשון. תעלות ובונקר, {name}.',
+          build: A => { A.card('wire', -3, 7, 1, 0.1); A.card('wire', 6, 7.5, 1, -0.1); A.sb(-4, 12, 7, 2); A.sb(5, 14, 6, 2); A.rock(-11, 15, 2.0, 1.9); A.card('hedgehog', 10, 10, 1, -0.3); },
+          spots: [P(-6, 12.8, 0.6), P(-3, 12.8, 0.6), P(-1, 12.8, 0.6), P(3, 14.8, 0.6), P(6, 14.8, 0.6), P(-11, 16.6, 1.7), RN(17, -12, 12)],
+          wave: [{ t: 'bunker', sprite: 'bunkerB', x: 1, d: 22, hp: 30 }, 'soldier', 'soldier', 'grenadier', 'soldier', 'heavy', 'soldier'] },
+        { pos: [3, -46], name: 'שני בונקרים', radio: 'שני בונקרים! אחד אחרי השני.', crateAt: 4, crate: 'grenade',
+          build: A => { A.sb(-2, 9, 6, 3); A.sb(5, 13, 5, 2); A.rock(-9, 12, 1.8, 3.1); A.crate(8, 8, 1, 0.3); A.card('wire', 0, 15, 1); A.barrel(-5, 7); A.barrel(-4.4, 7.3); },
+          spots: [P(-4, 9.8, 0.85), P(-1, 9.8, 0.85), P(4, 13.8, 0.6), P(6, 13.8, 0.6), PR(-9, 13.4, 1.5), SD(8, 8.9, 1.6)],
+          wave: [{ t: 'bunker', sprite: 'bunkerB', x: -6, d: 22, hp: 28 }, { t: 'bunker', sprite: 'bunkerB', x: 7, d: 25, hp: 28 }, 'soldier', 'grenadier', 'soldier', 'officer', 'soldier'] },
+        { pos: [-2, -88], name: 'התעלות', radio: 'רשת תעלות. הם יקפצו מכל כיוון.',
+          build: A => { A.sb(-5, 9, 6, 2, 0.2); A.sb(3, 11, 7, 2, -0.15); A.sb(-3, 16, 7, 2, 0.1); A.sb(5, 20, 6, 2); A.card('hedgehog', 9, 8, 1); A.crate(-9, 12, 1, 0.2); A.barrel(0, 13.5); A.barrel(0.6, 13.8); },
+          spots: [P(-7, 9.8, 0.6), P(-4, 9.8, 0.6), P(1, 11.8, 0.6), P(4, 11.8, 0.6), P(-5, 16.8, 0.6), P(-1, 16.8, 0.6), P(4, 20.8, 0.6), SD(-9, 12.9, -1.6), RN(23, -12, 12)],
+          wave: ['soldier', 'soldier', 'grenadier', 'heavy', 'soldier', 'soldier', 'grenadier', 'officer', 'soldier', 'heavy'] },
+        { pos: [1, -130], name: 'המוצב הגבוה', radio: 'המוצב הגבוה. אחריו נשאר רק אחד.', clear: 'המוצבים נפלו. רק המוצב האחרון נשאר.',
+          build: A => { A.rock(-10, 15, 2.4, 4.2); A.rock(10, 16, 2.4, 5.3); A.sb(-3, 10, 5, 4); A.sb(4, 11, 4, 4); A.card('wire', 0, 15, 1); A.barrel(-6, 7); A.barrel(-5.4, 7.3); },
+          spots: [PR(-10, 16.7, 2.0), PR(10, 17.7, 2.0), P(-4, 10.8), P(-2, 10.8), P(3, 11.8), P(5, 11.8), RN(18, -12, 12)],
+          wave: [{ t: 'bunker', sprite: 'bunkerB', x: 0, d: 24, hp: 36 }, 'prone', 'soldier', 'heavy', 'prone', 'grenadier', 'soldier', 'officer'] },
+      ],
+    }),
+    // ---------- 10 ----------
+    Object.assign({}, DAY, {
+      name: 'המוצב האחרון', place: 'רמת הגולן', sky: 'sky_golan', skyY: 0.08, ground: 't_basalt', groundTint: '#b4aca4', groundRepeat: 110, rockTint: '#45454a', hills: 24, puff: '#8a8078',
+      sun: ['#fff4dc', 3.2, [-40, 50, -60]], hemi: ['#bcd4ff', '#5a5a3a', 0.62], fog: '#c8d8e8', fogNear: 60, fogFar: 380, bg: '#cfe0f0', loading: 'זה הקרב האחרון...',
+      brief: 'המוצב הגדול שולט על כל הדרך, {name}. שלושה חרכי ירי ותותח על הגג. השמד את החרכים אחד אחד, ורק אז את התותח. זה הקרב האחרון של המלחמה.',
+      debrief: 'המוצב שותק. דגל עולה מעל הרכס.', winLine: 'המוצב שותק. כל הכבוד, {name}. נגמר.',
+      boss: { type: 'fort', scene: 2, at: [0, 32], scale: 1.15, radio: 'שלושה חרכים ותותח. קודם החרכים, {name}!' }, bossVoice: 'fort',
+      startWeapons: ['grenade'],
+      scenes: [
+        { pos: [0, -4.5], name: 'הגישה', radio: 'הגישה למוצב. הם יודעים שאנחנו באים, {name}.',
+          build: A => { A.rock(-7, 11, 2.0, 1.1); A.rock(6, 13, 1.8, 2.2); A.sb(-1, 9, 4, 4); A.card('hedgehog', 10, 9, 1, -0.2); A.card('wire', 0, 16, 1); A.sb(-6, 19, 5, 2); A.sb(5, 20, 5, 2); },
+          spots: [PR(-7, 12.6, 1.6), PR(6, 14.5, 1.5), P(-2, 9.8), P(0, 9.8), P(-7, 19.8, 0.6), P(-5, 19.8, 0.6), P(4, 20.8, 0.6), P(6, 20.8, 0.6), RN(23, -12, 12)],
+          wave: ['soldier', 'prone', 'soldier', 'grenadier', 'soldier', 'heavy', 'prone', 'soldier', 'officer'] },
+        { pos: [3, -46], name: 'השוחות', radio: 'השוחות האחרונות לפני המוצב.', jeepD: 22,
+          build: A => { A.sb(-4, 10, 7, 2, 0.1); A.sb(5, 13, 6, 2, -0.1); A.sb(-2, 17, 8, 2); A.card('wire', 1, 7, 1); A.rock(-11, 14, 2.0, 3.3); A.rock(11, 16, 2.2, 4.4); A.barrel(8, 8); A.barrel(8.6, 8.3); },
+          spots: [P(-6, 10.8, 0.6), P(-3, 10.8, 0.6), P(-1, 10.8, 0.6), P(4, 13.8, 0.6), P(7, 13.8, 0.6), P(-4, 17.8, 0.6), P(0, 17.8, 0.6), PR(-11, 15.6, 1.7), PR(11, 17.8, 1.9)],
+          wave: ['soldier', 'soldier', 'jeep', 'grenadier', 'soldier', 'heavy', 'prone', 'soldier', 'officer', 'grenadier'] },
+        { pos: [-1, -90], name: 'המוצב', radio: 'זה הוא. המוצב האחרון.',
+          build: A => { A.sb(-6, 8, 5, 4, -0.15); A.sb(6, 8.5, 5, 4, 0.15); A.rock(-14, 18, 2.4, 5.5); A.rock(14, 20, 2.4, 6.6); A.barrel(-9, 14); A.barrel(-8.4, 14.3); A.card('wire', 0, 20, 1.2); },
+          spots: [P(-7, 8.8), P(-5, 8.8), P(5, 9.3), P(7, 9.3), PR(-14, 19.9, 2.0), PR(14, 21.9, 2.0), RN(16, -12, 12)],
+          wave: ['soldier', 'soldier', 'grenadier', 'soldier'] },
+      ],
+    }),
+  ];
+
+  window.LEVELS67 = LEVELS;
+  window.CAMPAIGN67 = { outro: 'עשרה ביוני. הפסקת האש נכנסת לתוקף. בשישה ימים עברת חולות, הרים וסמטאות. רפי לוחץ לך את היד ואומר רק מילה אחת: כל הכבוד, {name}. אתה יושב על שק חול, פותח מימייה ובפעם הראשונה השבוע שומע שקט.' };
+})();

@@ -12,15 +12,8 @@
 <style>
 /* פריסה: פס גיבור קולנועי על רקע השמיים המצוירים, ואחריו עמודה אחת של מקטעים. עיצוב כהה אחד, בכוונה, כמו מסך ארקייד */
 :root {
-  --bg: #0c0d0a;
-  --panel: #15160f;
-  --panel2: #1c1d15;
-  --line: #34301f;
-  --ink: #f2ead8;
-  --mute: #aaa38a;
-  --amber: #e5a947;
-  --ember: #d9522f;
-  --ok: #9be36a;
+  --bg: #0c0d0a; --panel: #15160f; --panel2: #1c1d15; --line: #34301f;
+  --ink: #f2ead8; --mute: #aaa38a; --amber: #e5a947; --ember: #d9522f; --ok: #9be36a;
   --display: "Karantina", "Assistant", Impact, sans-serif;
   --body: "Assistant", "Segoe UI", Arial, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -37,8 +30,7 @@ p { margin: 0; }
 button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
 
-/* ניווט */
-.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(12,13,10,0.82); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(229,169,71,0.15); }
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(12,13,10,0.84); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(229,169,71,0.15); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
 .nav .wrap { display: flex; align-items: center; gap: 22px; padding-block: 10px; }
 .logo { font-family: var(--display); font-size: 34px; line-height: 1; color: var(--ink); text-decoration: none; }
@@ -47,22 +39,20 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .nav nav a { color: var(--mute); text-decoration: none; font-weight: 600; font-size: 15px; }
 .nav nav a:hover { color: var(--ink); }
 
-/* גיבור */
 .hero { position: relative; overflow: hidden; min-height: 620px; display: flex; align-items: flex-end;
   background: linear-gradient(180deg, rgba(12,13,10,0) 30%, rgba(12,13,10,0.75) 70%, var(--bg) 100%), url("assets/sky.webp") center 42% / cover no-repeat, #3a2418; }
 .hero .tank { position: absolute; left: -4%; bottom: 8%; width: min(720px, 70vw); max-width: none; filter: drop-shadow(0 30px 30px rgba(0,0,0,0.55)); pointer-events: none; }
-.hero .soldier { position: absolute; right: 6%; bottom: 18%; height: min(330px, 40vw); filter: drop-shadow(0 20px 20px rgba(0,0,0,0.5)); pointer-events: none; opacity: 0.95; }
+.hero .soldier { position: absolute; right: 6%; bottom: 18%; height: min(330px, 40vw); filter: drop-shadow(0 20px 20px rgba(0,0,0,0.5)); pointer-events: none; }
 .hero .wrap { position: relative; width: 100%; padding-block: 120px 46px; display: grid; gap: 18px; }
 .eyebrow { font-weight: 800; letter-spacing: 0.16em; font-size: 14px; color: var(--amber); text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
 .hero h1 { font-family: var(--display); font-size: clamp(110px, 20vw, 230px); line-height: 0.78; text-shadow: 0 6px 30px rgba(0,0,0,0.5); }
 .hero h1 span { color: var(--amber); }
 .hero .lede { font-size: 21px; max-width: 36ch; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
 
-/* כרטיס השחקן */
 .player { display: grid; gap: 14px; background: rgba(16,17,12,0.88); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; max-width: 620px; backdrop-filter: blur(6px); }
 .player-top { display: flex; align-items: center; gap: 14px; }
 .player-top img { width: 58px; height: 58px; border-radius: 6px; object-fit: cover; border: 2px solid var(--amber); }
-.player-top .who { display: grid; gap: 0; min-width: 0; }
+.player-top .who { display: grid; min-width: 0; }
 .player-top .who b { font-size: 21px; }
 .player-top .who span { color: var(--mute); font-size: 15px; }
 .namerow { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -76,49 +66,68 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .saveline { color: var(--mute); font-size: 15px; }
 .saveline b { color: var(--ok); font-weight: 600; }
 
-/* מספרים */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .stat { background: var(--panel); padding: 16px 18px; display: grid; gap: 2px; }
 .stat b { font-family: var(--display); font-size: 44px; line-height: 1; font-weight: 400; font-variant-numeric: tabular-nums; }
 .stat span { color: var(--mute); font-size: 14px; letter-spacing: 0.04em; }
 
-/* מקטעים */
 section.block { padding-block: 70px 0; scroll-margin-top: 70px; }
 .block-h { display: grid; gap: 6px; margin-bottom: 24px; }
 .block-h h2 { font-family: var(--display); font-size: clamp(48px, 7vw, 72px); line-height: 0.9; }
 .block-h p { color: var(--mute); max-width: 62ch; }
 
-.camps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-.camp { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; gap: 8px; align-content: start; position: relative; overflow: hidden; min-width: 0; }
-.camp .yr { font-family: var(--display); font-size: 46px; line-height: 0.9; color: var(--ca, var(--amber)); }
-.camp h3 { font-family: var(--display); font-size: 34px; line-height: 0.95; }
-.camp p { color: var(--mute); font-size: 15px; }
-.chip { justify-self: start; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 99px; background: rgba(155,227,106,0.14); color: var(--ok); }
-.chip.wait { background: rgba(255,255,255,0.07); color: var(--mute); }
-.camp.live { border-color: rgba(229,169,71,0.55); background: linear-gradient(160deg, rgba(229,169,71,0.12), var(--panel) 55%); }
+/* שלבים */
+.levels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.lv { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; text-decoration: none; color: var(--ink); transition: transform .12s, border-color .12s; min-width: 0; }
+.lv:hover { transform: translateY(-2px); border-color: var(--amber); }
+.lv .pic { aspect-ratio: 16/9; background-size: cover; background-position: center 70%; max-width: 100%; position: relative; }
+.lv .pic .n { position: absolute; bottom: 6px; right: 10px; font-family: var(--display); font-size: 44px; line-height: 1; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+.lv .body { padding: 10px 12px 12px; display: grid; gap: 2px; align-content: start; }
+.lv .body b { font-size: 17px; line-height: 1.2; }
+.lv .body span { color: var(--mute); font-size: 13px; }
+.lv .st { letter-spacing: 2px; font-size: 15px; color: #4a4434; margin-top: 4px; }
+.lv .st i { font-style: normal; } .lv .st i.on { color: #ffd85a; }
+.lv.locked { opacity: 0.45; pointer-events: none; }
+.lv.locked .pic { filter: grayscale(1) brightness(0.6); }
+.lv .tag { font-size: 12px; font-weight: 800; color: var(--ok); }
+.lv .tag.cp { color: var(--amber); }
 
-.areas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; counter-reset: a; }
-.area { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: start; }
-.area .n { grid-row: span 2; font-family: var(--display); font-size: 54px; line-height: 0.85; color: var(--amber); }
-.area b { font-size: 19px; }
-.area span { color: var(--mute); font-size: 15px; }
-.area.reached { border-color: rgba(155,227,106,0.4); }
-.area.reached .n { color: var(--ok); }
+.camps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.camp { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 6px; min-width: 0; }
+.camp .yr { font-family: var(--display); font-size: 40px; line-height: 0.9; color: var(--ca, var(--amber)); }
+.camp h3 { font-family: var(--display); font-size: 30px; line-height: 0.95; }
+.camp p { color: var(--mute); font-size: 15px; }
+.chip { justify-self: start; font-size: 13px; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: rgba(255,255,255,0.07); color: var(--mute); }
+
+/* הישגים */
+.ach { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.a { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; min-width: 0; }
+.a .ic { grid-row: span 2; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 18px; background: #24251c; color: #5a5644; }
+.a b { font-size: 16px; } .a span { font-size: 13px; color: var(--mute); }
+.a.on { border-color: rgba(255,216,90,0.45); background: linear-gradient(160deg, rgba(255,216,90,0.1), var(--panel) 60%); }
+.a.on .ic { background: #ffd85a; color: #2a2008; }
+
+/* טבלת שיאים */
+.board { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+.board table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.board th, .board td { text-align: right; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.board th { color: var(--mute); font-weight: 600; font-size: 14px; }
+.board tr.me td { background: rgba(229,169,71,0.12); }
+.board td.r { font-family: var(--display); font-size: 26px; color: var(--amber); width: 1%; }
+.board-note { color: var(--mute); font-size: 15px; padding: 16px; }
 
 .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .ctl { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; min-width: 0; }
 .ctl h3 { font-family: var(--display); font-size: 32px; margin-bottom: 8px; }
 .ctl dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
-.ctl dt { font-weight: 800; }
-.ctl dd { margin: 0; color: var(--mute); }
+.ctl dt { font-weight: 800; } .ctl dd { margin: 0; color: var(--mute); }
 kbd { font-family: var(--body); font-weight: 800; background: var(--panel2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 7px; font-size: 15px; color: var(--ink); }
 
 .about { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items: start; }
 .about .text { display: grid; gap: 14px; min-width: 0; }
 .about .text p { max-width: 62ch; }
 .tree { background: #090a07; border: 1px solid var(--line); border-radius: 8px; padding: 18px; font-family: var(--mono); font-size: 13.5px; line-height: 1.75; overflow-x: auto; direction: ltr; text-align: left; white-space: pre; color: #d9cfb6; min-width: 0; }
-.tree i { color: var(--mute); font-style: normal; }
-.tree b { color: var(--amber); font-weight: 400; }
+.tree i { color: var(--mute); font-style: normal; } .tree b { color: var(--amber); font-weight: 400; }
 pre.cmd { margin: 0; background: #090a07; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; font-family: var(--mono); font-size: 14px; direction: ltr; text-align: left; overflow-x: auto; color: #d9cfb6; }
 .feat { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
 .feat li { padding-inline-start: 22px; position: relative; }
@@ -135,29 +144,26 @@ pre.cmd { margin: 0; background: #090a07; border: 1px solid var(--line); border-
 footer { margin-top: 80px; border-top: 1px solid var(--line); padding-block: 28px calc(28px + env(safe-area-inset-bottom, 0px)); color: var(--mute); font-size: 15px; }
 footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
 
-@media (max-width: 900px) {
-  .camps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .areas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .about { grid-template-columns: 1fr; }
-  .hero .soldier { display: none; }
-}
+@media (max-width: 1000px) { .levels { grid-template-columns: repeat(3, minmax(0, 1fr)); } .ach { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .camps { grid-template-columns: 1fr; } .about { grid-template-columns: 1fr; } .hero .soldier { display: none; } }
 @media (max-width: 640px) {
   .nav nav { display: none; }
   .hero { min-height: 560px; }
   .hero .tank { width: 110vw; left: -20%; bottom: 46%; opacity: 0.55; }
   .hero .lede { font-size: 18px; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .camps, .areas, .controls { grid-template-columns: 1fr; }
+  .levels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ach, .controls { grid-template-columns: 1fr; }
   .stat b { font-size: 36px; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn, .lv { transition: none; } }
 </style>
 </head>
 <body>
 <header class="nav">
   <div class="wrap">
     <a class="logo" href="#top">קו <span>האש</span></a>
-    <nav aria-label="ניווט ראשי"><a href="#play">שחק</a><a href="#campaigns">המערכות</a><a href="#sinai">שלב סיני</a><a href="#controls">איך משחקים</a><a href="#project">על הפרויקט</a><a href="#settings">הגדרות</a></nav>
+    <nav aria-label="ניווט ראשי"><a href="#levels">השלבים</a><a href="#achievements">הישגים</a><a href="#board">טבלת שיאים</a><a href="#controls">איך משחקים</a><a href="#project">על הפרויקט</a><a href="#settings">הגדרות</a></nav>
   </div>
 </header>
 
@@ -167,8 +173,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
   <div class="wrap" id="play">
     <span class="eyebrow">משחק יריות ישראלי בדפדפן · תלת מימד · עברית</span>
     <h1>קו <span>האש</span></h1>
-    <p class="lede">מסיני של 1967 ועד פלישה בנגב של 2090. אויבים קופצים מאחורי מחסות, אתה מכוון, יורה, מתכופף כשהטבעת נהיית אדומה, ומפוצץ את מה שעומד בדרך.</p>
-
+    <p class="lede">ששת הימים, עשרה שלבים: מהמטווח בדרום, דרך סיני, סמטאות ירושלים בשחר ועד המוצב האחרון ברמה.</p>
     <div class="player" id="player">
       <div class="player-top">
         <img src="assets/commander.webp" alt="המג״ד רפי">
@@ -179,8 +184,8 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
         <button class="btn ghost" type="submit" id="savename">שמור שם</button>
       </form>
       <div class="actions">
-        <a class="btn" id="cta" href="sinai3d.html">התחל: הפריצה בסיני</a>
-        <a class="btn ghost" href="classic.html">הגרסה הקלאסית</a>
+        <a class="btn" id="cta" href="play.html?l=1">התחל: בסיס האימונים</a>
+        <a class="btn ghost" href="#levels">כל השלבים</a>
       </div>
       <span class="saveline" id="saveline">ההתקדמות נשמרת בדפדפן הזה, בתחילת כל אזור.</span>
     </div>
@@ -188,33 +193,32 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
 </section>
 
 <div class="wrap">
-  <div class="stats" id="stats" aria-label="ההתקדמות שלך">
-    <div class="stat"><b id="s-best">0</b><span>שיא בשלב סיני</span></div>
-    <div class="stat"><b id="s-stars">0/3</b><span>כוכבים</span></div>
-    <div class="stat"><b id="s-area">טרם</b><span>אזור אחרון שנשמר</span></div>
+  <div class="stats" aria-label="ההתקדמות שלך">
+    <div class="stat"><b id="s-done">0/10</b><span>שלבים שהושלמו</span></div>
+    <div class="stat"><b id="s-stars">0/30</b><span>כוכבים</span></div>
+    <div class="stat"><b id="s-total">0</b><span>סך השיאים</span></div>
     <div class="stat"><b id="s-rank">טוראי</b><span>דרגה</span></div>
   </div>
 
-  <section class="block" id="campaigns">
-    <div class="block-h"><h2>ארבע מערכות</h2><p>כל מערכה עומדת בפני עצמה, עם סיפור, מפקד, נשקים ואויבים משלה. המנוע החדש בתלת מימד עולה מערכה אחרי מערכה. עד אז, כל ארבעים השלבים זמינים בגרסה הקלאסית.</p></div>
+  <section class="block" id="levels">
+    <div class="block-h"><h2>ששת הימים</h2><p>עשרה שלבים ברצף. כל שלב נפתח כשמסיימים את הקודם, ושני הראשונים פתוחים מההתחלה. כל שלב מחולק לאזורים, וההתקדמות נשמרת בתחילת כל אזור.</p></div>
+    <div class="levels" id="levelgrid"></div>
     <div class="camps">
-      <article class="camp live" style="--ca: var(--amber)"><span class="yr">1967</span><h3>ששת הימים</h3><p>מסיני, דרך סמטאות ירושלים, ועד מוצבי הבזלת ברמה.</p><span class="chip">שלב סיני זמין בתלת מימד</span></article>
-      <article class="camp" style="--ca: #d8423a"><span class="yr">1974</span><h3>הצבא השחור</h3><p>עולם חלופי. סיירת הנץ מחלצת מדענים מהאי של הגנרל ואלק.</p><span class="chip wait">בגרסה הקלאסית</span></article>
-      <article class="camp" style="--ca: #4fe3ff"><span class="yr">2090</span><h3>פלישה</h3><p>מכונות הקסרים נוחתות במכתש רמון. אורה, הבינה הטקטית, בקשר.</p><span class="chip wait">בגרסה הקלאסית</span></article>
-      <article class="camp" style="--ca: #9be36a"><span class="yr">היום</span><h3>מבצע חילוץ</h3><p>יחידת ברק נגד כנופיית הנחש. בני ערובה, ודיוק לפני מהירות.</p><span class="chip wait">בגרסה הקלאסית</span></article>
+      <article class="camp" style="--ca: #d8423a"><span class="yr">1974</span><h3>הצבא השחור</h3><p>עולם חלופי. סיירת הנץ מחלצת מדענים מהאי של הגנרל ואלק.</p><span class="chip">בגרסה הקלאסית</span></article>
+      <article class="camp" style="--ca: #4fe3ff"><span class="yr">2090</span><h3>פלישה</h3><p>מכונות הקסרים נוחתות במכתש רמון. אורה, הבינה הטקטית, בקשר.</p><span class="chip">בגרסה הקלאסית</span></article>
+      <article class="camp" style="--ca: #9be36a"><span class="yr">היום</span><h3>מבצע חילוץ</h3><p>יחידת ברק נגד כנופיית הנחש. בני ערובה, ודיוק לפני מהירות.</p><span class="chip">בגרסה הקלאסית</span></article>
     </div>
+    <p style="margin-top:14px"><a href="classic.html">לגרסה הקלאסית, ארבע מערכות בארבעים שלבים</a></p>
   </section>
 
-  <section class="block" id="sinai">
-    <div class="block-h"><h2>הפריצה בסיני</h2><p>חמישה ביוני, שחר. שש אזורים ברצף, והמצלמה נוסעת ביניהם כמו במשחקי הארקייד. בתחילת כל אזור ההתקדמות נשמרת.</p></div>
-    <div class="areas" id="areas">
-      <div class="area" data-i="0"><span class="n">1</span><b>הדיונות</b><span>עמדות מאחורי שקי חול, ארגזים שנשברים ומשאית שרופה.</span></div>
-      <div class="area" data-i="1"><span class="n">2</span><b>השיירה השרופה</b><span>ג׳יפ עם מקלע חוצה את השטח. קצין עם אקדח.</span></div>
-      <div class="area" data-i="2"><span class="n">3</span><b>הגדר והבונקר</b><span>גדר תיל ובונקר בטון. יורים לתוך החרך או זורקים רימון.</span></div>
-      <div class="area" data-i="3"><span class="n">4</span><b>מחנה האספקה</b><span>אוהלים וחביות דלק. חבית אחת מפוצצת את כל מי שעומד לידה.</span></div>
-      <div class="area" data-i="4"><span class="n">5</span><b>הרכס</b><span>צלפים שוכבים על הסלעים. מחפשים ראשים מעל האבנים.</span></div>
-      <div class="area" data-i="5"><span class="n">6</span><b>השריון</b><span>טנק כבד. צריח ומקלע הם נקודות התורפה, ואת הפגזים מיירטים באוויר.</span></div>
-    </div>
+  <section class="block" id="achievements">
+    <div class="block-h"><h2>הישגים</h2><p id="ach-sum">משימות צד שנפתחות תוך כדי משחק.</p></div>
+    <div class="ach" id="achgrid"></div>
+  </section>
+
+  <section class="block" id="board">
+    <div class="block-h"><h2>טבלת שיאים</h2><p>הלוחמים הטובים מבין כל מי שמשחק דרך הקישור המשותף. נכנסים לטבלה אוטומטית בסוף כל שלב, עם השם שבחרת.</p></div>
+    <div class="board" id="boardbox"><p class="board-note" id="board-note">טוען את הטבלה...</p></div>
   </section>
 
   <section class="block" id="controls">
@@ -241,48 +245,52 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
     <div class="block-h"><h2>על הפרויקט</h2><p>מה יש בריפו, איך הוא בנוי, ואיך מריצים אותו.</p></div>
     <div class="about">
       <div class="text">
-        <p>קו האש הוא משחק דפדפן מקורי בסגנון משחקי האקדח של הארקייד. אין התקנה, אין שרת משחק ואין תלויות חיצוניות: קבצי HTML ו־JavaScript, ספריית Three.js שמגיעה עם הריפו, ואמנות בפורמט webp.</p>
+        <p>קו האש הוא משחק דפדפן מקורי בסגנון משחקי האקדח של הארקייד. אין התקנה ואין שרת משחק: קבצי HTML ו־JavaScript, ספריית Three.js שמגיעה עם הריפו, אמנות בפורמט webp וקולות ב־mp3.</p>
         <ul class="feat">
-          <li><b>מנוע תלת מימד:</b> Three.js עם קרקע של דיונות, צללים בזמן אמת, ערפל, זוהר, גרעיניות של סרט ותיקון צבע.</li>
-          <li><b>אמנות מצוירת:</b> השמיים, החיילים, הרכבים, הטנק והנשקים נוצרו במחולל התמונות Gemini, והרקע הירוק הוסר בסקריפט פייתון.</li>
-          <li><b>הדמויות</b> הן כרטיסים שתמיד פונים למצלמה, ובדיקת הפגיעה בהן נעשית לפי הפיקסלים האמיתיים של הציור, כולל ראש ורגליים.</li>
-          <li><b>מחסות אמיתיות:</b> שקי חול, סלעים, ארגזים וחביות בתלת מימד. ארגזים נשברים, חביות מתפוצצות.</li>
-          <li><b>סאונד</b> מסונתז בקוד עם Web Audio, וקולות בעברית דרך הקראת הדפדפן.</li>
-          <li><b>שמירה</b> בדפדפן: שם השחקן, הגדרות, שיא, כוכבים ונקודת ביקורת בתחילת כל אזור.</li>
+          <li><b>מנוע אחד, עשרה שלבים:</b> המנוע ב־engine3d.js, וכל שלב הוא נתונים ב־levels67.js: שמיים, קרקע, תאורה, מחסות, נקודות הופעה, גלי אויבים ובוס.</li>
+          <li><b>אמנות מצוירת:</b> 7 שמיים, טקסטורות, חיילים בתשע תנוחות, אזרחים, רכבים, טנק ומוצב. נוצרו במחולל התמונות Gemini, והרקע הירוק הוסר בסקריפט פייתון.</li>
+          <li><b>קולות בעברית:</b> המג״ד רפי והאזרחים הוקלטו בהקראה של Gemini, ונשמעים דרך מסנן של קשר צבאי.</li>
+          <li><b>תנועה:</b> הדמויות נושמות, נרתעות כשהן יורות, נרעדות מפגיעה, נוטות כשהן יוצאות ממחסה ועפות לאחור כשהן נופלות.</li>
+          <li><b>שמירה:</b> שם, הגדרות, רמת קושי, שיאים, כוכבים, הישגים ונקודת ביקורת בכל אזור, בדפדפן.</li>
+          <li><b>טבלת שיאים משותפת</b> דרך מאגר הנתונים של העמוד המשותף ב־claude.ai.</li>
         </ul>
-        <p>להרצה מקומית צריך שרת קבצים פשוט, כי הדפדפן לא טוען טקסטורות מקובץ פתוח:</p>
+        <p>להרצה מקומית צריך שרת קבצים פשוט:</p>
         <pre class="cmd">python3 -m http.server 8000</pre>
-        <p>ואז לפתוח את <span dir="ltr">http://localhost:8000</span>.</p>
       </div>
       <div class="tree" aria-label="מבנה הריפו"><b>kav-haesh/</b>
-├── index.html        <i>עמוד הבית</i>
-├── sinai3d.html      <i>שלב סיני בתלת מימד</i>
-├── sinai3d.js        <i>המנוע והשלב</i>
-├── profile.js        <i>שם, הגדרות ושמירה</i>
-├── audio.js          <i>סאונד ומוזיקה</i>
-├── classic.html      <i>הגרסה הקלאסית</i>
-├── data.js           <i>4 מערכות, 40 שלבים</i>
-├── art.js            <i>ציור הגרסה הקלאסית</i>
-├── game.js           <i>מנוע הגרסה הקלאסית</i>
-├── assets/           <i>28 תמונות webp</i>
-├── vendor/           <i>Three.js 0.147</i>
+├── index.html     <i>עמוד הבית</i>
+├── play.html      <i>מסך המשחק, ?l=1 עד 10</i>
+├── engine3d.js    <i>מנוע התלת מימד</i>
+├── levels67.js    <i>עשרת השלבים</i>
+├── profile.js     <i>שמירה, הגדרות, הישגים</i>
+├── board.js       <i>טבלת השיאים</i>
+├── audio.js       <i>אפקטים ומוזיקה</i>
+├── voices.js      <i>רשימת ההקלטות</i>
+├── classic.html   <i>הגרסה הקלאסית</i>
+├── assets/        <i>אמנות webp</i>
+│   └── voice/     <i>56 הקלטות mp3</i>
+├── vendor/        <i>Three.js 0.147</i>
 └── tools/
-    └── key_sprites.py <i>הסרת רקע ירוק</i></div>
+    └── key_sprites.py</div>
     </div>
   </section>
 
   <section class="block" id="settings">
     <div class="block-h"><h2>הגדרות</h2><p>נשמרות בדפדפן הזה, ונכנסות לתוקף בכניסה הבאה לשלב.</p></div>
     <div class="settings">
+      <label for="diff">רמת קושי
+        <select id="diff"><option value="easy">קל: 7 חיים, אויבים איטיים</option><option value="normal">רגיל</option><option value="hard">קשה: 4 חיים, אויבים מהירים</option></select>
+      </label>
       <label for="q">גרפיקה
         <select id="q"><option value="high">גבוהה</option><option value="low">חסכונית</option></select>
       </label>
       <label for="snd"><input type="checkbox" id="snd"> אפקטים וקולות</label>
       <label for="mus"><input type="checkbox" id="mus"> מוזיקה</label>
+      <label for="unl"><input type="checkbox" id="unl"> פתח את כל השלבים</label>
       <span class="toast" id="toast" role="status"></span>
       <div class="danger">
         <button class="btn ghost small" id="reset">איפוס התקדמות</button>
-        <span id="confirm" hidden>למחוק את השם, השיא ונקודת הביקורת? <button class="btn warn small" id="reset-yes">כן, למחוק</button> <button class="btn ghost small" id="reset-no">ביטול</button></span>
+        <span id="confirm" hidden>למחוק את השם, השיאים, ההישגים ונקודות הביקורת? <button class="btn warn small" id="reset-yes">כן, למחוק</button> <button class="btn ghost small" id="reset-no">ביטול</button></span>
       </div>
     </div>
   </section>
@@ -296,39 +304,54 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
 </footer>
 
 <script src="profile.js"></script>
+<script src="levels67.js"></script>
+<script src="board.js"></script>
 <script>
 (function () {
   const $ = id => document.getElementById(id);
-  const NAMES = ['הדיונות', 'השיירה השרופה', 'הגדר והבונקר', 'מחנה האספקה', 'הרכס', 'השריון'];
+  const LV = window.LEVELS67;
+  const ICON = ['✦', '◎', '✚', '◆', '◉', '✸', '⬢', '✶', '▲', '■', '☘', '⚑', '★'];
   let P = PROFILE.load();
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   function render() {
-    const lv = P.levels.sinai || {};
     const named = (P.name || '').trim();
     $('greet').textContent = named ? `שלום, ${PROFILE.rank(P)} ${named}` : 'איך קוראים לך, חייל?';
     $('greet-sub').textContent = named ? 'המג״ד רפי יקרא לך בשם בקשר.' : 'המג״ד רפי צריך לדעת למי הוא קורא בקשר.';
-    $('pname').value = P.name || '';
-    $('savename').textContent = named ? 'עדכן שם' : 'שמור שם';
-    const cp = lv.checkpoint;
-    if (cp) {
-      $('cta').textContent = `המשך: אזור ${cp.scene + 1}, ${NAMES[cp.scene]}`;
-      $('saveline').innerHTML = `<b>שמור:</b> אזור ${cp.scene + 1} מתוך 6, ${cp.score.toLocaleString('he-IL')} נקודות, ${cp.lives} חיים. נשמר ${new Date(cp.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}.`;
-    } else if (lv.completed) {
-      $('cta').textContent = 'שחק שוב: הפריצה בסיני';
-      $('saveline').innerHTML = `<b>השלב הושלם.</b> השיא שלך ${(lv.best || 0).toLocaleString('he-IL')}. נסה להגיע לשלושה כוכבים.`;
-    } else {
-      $('cta').textContent = 'התחל: הפריצה בסיני';
-      $('saveline').textContent = 'ההתקדמות נשמרת בדפדפן הזה, בתחילת כל אזור.';
-    }
-    $('s-best').textContent = (lv.best || 0).toLocaleString('he-IL');
-    $('s-stars').textContent = `${lv.stars || 0}/3`;
-    $('s-area').textContent = cp ? `${cp.scene + 1}/6` : lv.completed ? 'הושלם' : 'טרם';
-    $('s-rank').textContent = PROFILE.rank(P);
-    const reached = cp ? cp.scene : lv.completed ? 5 : -1;
-    document.querySelectorAll('.area').forEach(a => a.classList.toggle('reached', +a.dataset.i <= reached));
-    $('q').value = P.settings.quality; $('snd').checked = P.settings.sound; $('mus').checked = P.settings.music;
+    $('pname').value = P.name || ''; $('savename').textContent = named ? 'עדכן שם' : 'שמור שם';
+    // מה להמשיך: נקודת ביקורת אחרונה, או השלב הפתוח הבא
+    let cpBest = null, nextOpen = 1;
+    LV.forEach((l, i) => { const s = P.levels['67-' + (i + 1)] || {}; if (s.checkpoint && (!cpBest || s.checkpoint.at > cpBest.cp.at)) cpBest = { n: i + 1, cp: s.checkpoint }; if (s.completed) nextOpen = Math.min(LV.length, i + 2); });
+    if (cpBest) { $('cta').href = 'play.html?l=' + cpBest.n; $('cta').textContent = `המשך: שלב ${cpBest.n}, אזור ${cpBest.cp.scene + 1}`; $('saveline').innerHTML = `<b>שמור:</b> ${esc(LV[cpBest.n - 1].name)}, אזור ${cpBest.cp.scene + 1}, ${cpBest.cp.score.toLocaleString('he-IL')} נקודות. נשמר ${new Date(cpBest.cp.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}.`; }
+    else { $('cta').href = 'play.html?l=' + nextOpen; $('cta').textContent = `${nextOpen === 1 ? 'התחל' : 'המשך'}: ${LV[nextOpen - 1].name}`; $('saveline').textContent = 'ההתקדמות נשמרת בדפדפן הזה, בתחילת כל אזור.'; }
+    // שלבים
+    let done = 0, stars = 0;
+    $('levelgrid').innerHTML = LV.map((l, i) => {
+      const n = i + 1, s = P.levels['67-' + n] || {}, open = PROFILE.isUnlocked(P, n);
+      if (s.completed) done++; stars += s.stars || 0;
+      const tag = s.checkpoint ? `<span class="tag cp">שמור: אזור ${s.checkpoint.scene + 1}</span>` : s.completed ? `<span class="tag">שיא ${(s.best || 0).toLocaleString('he-IL')}</span>` : '';
+      return `<a class="lv${open ? '' : ' locked'}" href="play.html?l=${n}" ${open ? '' : 'aria-disabled="true" tabindex="-1"'}>
+        <div class="pic" style="background-image:url('assets/${l.sky}.webp')"><span class="n">${n}</span></div>
+        <div class="body"><b>${esc(l.name)}</b><span>${esc(l.place)} · ${l.scenes.length} אזורים${l.boss ? ' · בוס' : ''}</span>${tag}<span class="st">${[0, 1, 2].map(k => `<i class="${k < (s.stars || 0) ? 'on' : ''}">★</i>`).join('')}</span></div></a>`;
+    }).join('');
+    $('s-done').textContent = `${done}/${LV.length}`; $('s-stars').textContent = `${stars}/${LV.length * 3}`;
+    $('s-total').textContent = PROFILE.totalBest(P).toLocaleString('he-IL'); $('s-rank').textContent = PROFILE.rank(P);
+    // הישגים
+    const got = PROFILE.ACH.filter(a => P.achievements[a.id]).length;
+    $('ach-sum').textContent = `${got} מתוך ${PROFILE.ACH.length} הישגים. משימות צד שנפתחות תוך כדי משחק.`;
+    $('achgrid').innerHTML = PROFILE.ACH.map((a, i) => `<div class="a${P.achievements[a.id] ? ' on' : ''}"><span class="ic" aria-hidden="true">${ICON[i % ICON.length]}</span><b>${esc(a.name)}</b><span>${esc(a.desc)}</span></div>`).join('');
+    $('diff').value = P.settings.difficulty || 'normal'; $('q').value = P.settings.quality; $('snd').checked = P.settings.sound; $('mus').checked = P.settings.music; $('unl').checked = !!P.settings.unlockAll;
   }
   function toast(t) { $('toast').textContent = t; clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').textContent = '', 2400); }
+
+  // טבלת שיאים
+  let unsub = null, boardTimer = setTimeout(() => { if (!unsub) $('board-note').textContent = 'טבלת השיאים המשותפת זמינה כשמשחקים דרך הקישור המשותף ב־claude.ai.'; }, 10000);
+  BOARD.watch((rows, err) => {
+    clearTimeout(boardTimer);
+    if (!rows) { $('boardbox').innerHTML = `<p class="board-note">${err ? 'הטבלה לא זמינה כרגע.' : 'טבלת השיאים המשותפת זמינה כשמשחקים דרך הקישור המשותף ב־claude.ai.'}</p>`; return; }
+    if (!rows.length) { $('boardbox').innerHTML = '<p class="board-note">עוד אין שיאים. סיים שלב כדי להיות הראשון בטבלה.</p>'; return; }
+    $('boardbox').innerHTML = `<table><thead><tr><th>#</th><th>לוחם</th><th>סך הכל</th><th>שלבים</th><th>רמה</th></tr></thead><tbody>${rows.map((r, i) => `<tr class="${r.me ? 'me' : ''}"><td class="r">${i + 1}</td><td>${esc(r.name || 'חייל אלמוני')}${r.me ? ' (אתה)' : ''}</td><td>${(+r.total || 0).toLocaleString('he-IL')}</td><td>${+r.done || 0}/10</td><td>${{ easy: 'קל', normal: 'רגיל', hard: 'קשה' }[r.diff] || ''}</td></tr>`).join('')}</tbody></table>`;
+  }).then(u => { unsub = u; });
 
   $('nameform').addEventListener('submit', e => {
     e.preventDefault();
@@ -336,12 +359,9 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
     if (!PROFILE.save(P)) { $('greet-sub').textContent = 'הדפדפן חוסם שמירה (אולי חלון פרטי). אפשר לשחק, אבל ההתקדמות לא תישמר.'; return; }
     render();
   });
-  $('cta').addEventListener('click', () => {
-    // שם שהוקלד ולא נשמר נשמר לפני הכניסה לשלב
-    const typed = $('pname').value.trim(); if (typed && typed !== P.name) { P.name = typed.slice(0, 18); PROFILE.save(P); }
-  });
+  document.addEventListener('click', e => { const a = e.target.closest('#cta, .lv'); if (!a) return; const typed = $('pname').value.trim(); if (typed && typed !== P.name) { P.name = typed.slice(0, 18); PROFILE.save(P); } });
   const setOpt = (id, key, val) => $(id).addEventListener('change', e => { P.settings[key] = val(e.target); PROFILE.save(P); toast('נשמר'); });
-  setOpt('q', 'quality', el => el.value); setOpt('snd', 'sound', el => el.checked); setOpt('mus', 'music', el => el.checked);
+  setOpt('diff', 'difficulty', el => el.value); setOpt('q', 'quality', el => el.value); setOpt('snd', 'sound', el => el.checked); setOpt('mus', 'music', el => el.checked); $('unl').addEventListener('change', e => { P.settings.unlockAll = e.target.checked; PROFILE.save(P); render(); toast('נשמר'); });
   $('reset').addEventListener('click', () => { $('confirm').hidden = false; $('reset').hidden = true; });
   $('reset-no').addEventListener('click', () => { $('confirm').hidden = true; $('reset').hidden = false; });
   $('reset-yes').addEventListener('click', () => { PROFILE.reset(); P = PROFILE.load(); $('confirm').hidden = true; $('reset').hidden = false; render(); toast('ההתקדמות נמחקה'); });

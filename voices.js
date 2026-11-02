@@ -1,0 +1,2 @@
+/* רשימת הקלטות הקול שקיימות ב-assets/voice */
+window.VOICES = ["civ","clear1","clear2","cover","dontshoot_f","dontshoot_m","fort","go1","go2","grenade","help_f","help_m","hurt1","hurt2","jeep","l10s0","l10s1","l10s2","l1s0","l1s1","l1s2","l2s0","l2s1","l2s2","l2s3","l2s4","l2s5","l3s0","l3s1","l3s2","l3s3","l4s0","l4s1","l4s2","l4s3","l5s0","l5s1","l5s2","l6s0","l6s1","l6s2","l6s3","l7s0","l7s1","l7s2","l7s3","l8s0","l8s1","l8s2","l8s3","l9s0","l9s1","l9s2","l9s3","tank","win"];
