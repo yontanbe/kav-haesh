@@ -352,6 +352,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
     if (!rows.length) { $('boardbox').innerHTML = '<p class="board-note">עוד אין שיאים. סיים שלב כדי להיות הראשון בטבלה.</p>'; return; }
     $('boardbox').innerHTML = `<table><thead><tr><th>#</th><th>לוחם</th><th>סך הכל</th><th>שלבים</th><th>רמה</th></tr></thead><tbody>${rows.map((r, i) => `<tr class="${r.me ? 'me' : ''}"><td class="r">${i + 1}</td><td>${esc(r.name || 'חייל אלמוני')}${r.me ? ' (אתה)' : ''}</td><td>${(+r.total || 0).toLocaleString('he-IL')}</td><td>${+r.done || 0}/10</td><td>${{ easy: 'קל', normal: 'רגיל', hard: 'קשה' }[r.diff] || ''}</td></tr>`).join('')}</tbody></table>`;
   }).then(u => { unsub = u; });
+  BOARD.sync(P);
 
   $('nameform').addEventListener('submit', e => {
     e.preventDefault();
