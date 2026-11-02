@@ -52,7 +52,7 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px s
 .btn { appearance: none; border: 0; cursor: pointer; padding: 14px 26px; font-weight: 800; font-size: 18px; border-radius: 4px; background: var(--camp); color: #14110a;
   clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); transition: transform .12s, filter .12s; }
 .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); clip-path: none; }
+.btn.ghost { text-decoration: none; display: inline-block; background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--line); clip-path: none; }
 .keys { color: var(--mute); font-size: 15px; }
 .keys kbd { font-family: var(--body); font-weight: 800; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 1px 7px; }
 
@@ -156,6 +156,7 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px s
         <p>מסיני של 1967 ועד פלישת חייזרים בנגב של 2090. מכוונים עם העכבר, יורים בקליק, ושומרים על בני הערובה בחיים.</p>
         <div class="row">
           <button class="btn" id="start-btn">בחר מערכה</button>
+          <a class="btn ghost" href="sinai3d.html">חדש: שלב סיני בתלת מימד</a>
           <span class="keys"><kbd>קליק</kbd> יורה · <kbd>קליק ימני</kbd> או <kbd>R</kbd> טוען · <kbd>Esc</kbd> השהיה</span>
         </div>
         <span class="rot">כדאי לסובב את הטלפון לרוחב</span>
