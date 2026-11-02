@@ -7,6 +7,11 @@
   const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   const isTouch = matchMedia('(pointer: coarse)').matches;
   const NSC = 6;
+  const PF = window.PROFILE ? PROFILE.load() : null;
+  const NAME = window.PROFILE ? PROFILE.displayName(PF) : 'דני';
+  const LOW = PF && PF.settings.quality === 'low';
+  const LV = 'sinai';
+  if (PF) { S.sfxOn = PF.settings.sound; S.musicOn = PF.settings.music; S.voiceOn = PF.settings.sound; }
 
   // ---------- נכסים ----------
   // head ו-muzzle בשברים של התמונה (0,0 = פינה שמאלית עליונה)
@@ -90,7 +95,7 @@
 
   function initGL() {
     renderer = new T.WebGLRenderer({ canvas: $('gl'), antialias: true, powerPreference: 'high-performance' });
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = LOW ? T.PCFShadowMap : T.PCFSoftShadowMap;
     scene = new T.Scene();
     scene.fog = new T.Fog(lin('#d8a585'), 45, 340);
     scene.background = lin('#e9b98c');
@@ -105,11 +110,11 @@
 
     hemi = new T.HemisphereLight(lin('#b9c9e8'), lin('#a8784a'), 0.55); scene.add(hemi);
     sun = new T.DirectionalLight(lin('#ffc590'), 3.2); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 260 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
+    sun.shadow.mapSize.set(LOW ? 1024 : 2048, LOW ? 1024 : 2048); Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 260 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
     scene.add(sun); scene.add(sun.target);
     boomLight = new T.PointLight(lin('#ff9a40'), 0, 30, 2); scene.add(boomLight);
 
-    const g = new T.PlaneGeometry(900, 900, 260, 260); g.rotateX(-Math.PI / 2); g.translate(0, 0, -120);
+    const g = new T.PlaneGeometry(900, 900, LOW ? 150 : 260, LOW ? 150 : 260); g.rotateX(-Math.PI / 2); g.translate(0, 0, -120);
     const p = g.attributes.position;
     for (let i = 0; i < p.count; i++) p.setY(i, groundH(p.getX(i), p.getZ(i)));
     g.computeVertexNormals();
@@ -122,7 +127,7 @@
     partTex.flash = canvasTex(128, (x, s) => { x.translate(s / 2, s / 2); for (let i = 0; i < 7; i++) { x.rotate(Math.PI * 2 / 7 + rand() * 0.3); const gr = x.createLinearGradient(0, 0, s / 2, 0); gr.addColorStop(0, 'rgba(255,250,220,1)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); x.fillStyle = gr; x.beginPath(); x.moveTo(0, -s * 0.05); x.lineTo(s * (0.3 + rand() * 0.2), 0); x.lineTo(0, s * 0.05); x.fill(); } const gr = x.createRadialGradient(0, 0, 0, 0, 0, s * 0.22); gr.addColorStop(0, 'rgba(255,255,240,1)'); gr.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = gr; x.fillRect(-s / 2, -s / 2, s, s); });
     partTex.decal = canvasTex(64, (x, s) => { const gr = x.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2); gr.addColorStop(0, 'rgba(20,14,8,0.95)'); gr.addColorStop(0.35, 'rgba(40,28,16,0.6)'); gr.addColorStop(1, 'rgba(60,40,20,0)'); x.fillStyle = gr; x.fillRect(0, 0, s, s); });
 
-    const dg = new T.BufferGeometry(), N = 1400, arr = new Float32Array(N * 3);
+    const dg = new T.BufferGeometry(), N = LOW ? 500 : 1400, arr = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) { arr[i * 3] = (rand() - 0.5) * 120; arr[i * 3 + 1] = rand() * 14; arr[i * 3 + 2] = -rand() * 260 + 10; }
     dg.setAttribute('position', new T.BufferAttribute(arr, 3));
     const dust = new T.Points(dg, new T.PointsMaterial({ size: 0.07, map: partTex.soft, transparent: true, opacity: 0.55, depthWrite: false, color: lin('#ffe2b8'), blending: T.AdditiveBlending }));
@@ -133,7 +138,7 @@
     const rt = new T.WebGLRenderTarget(W, H, { type: T.HalfFloatType });
     composer = new T.EffectComposer(renderer, rt);
     composer.addPass(new T.RenderPass(scene, camera));
-    composer.addPass(new T.UnrealBloomPass(new T.Vector2(W, H), 0.55, 0.6, 0.9));
+    if (!LOW) composer.addPass(new T.UnrealBloomPass(new T.Vector2(W, H), 0.55, 0.6, 0.9));
     finalPass = new T.ShaderPass({
       uniforms: { tDiffuse: { value: null }, time: { value: 0 }, dmg: { value: 0 }, slow: { value: 0 }, flash: { value: 0 }, exposure: { value: 0.82 }, duck: { value: 0 } },
       vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
@@ -283,7 +288,7 @@
   ];
   const SCENE_NAMES = ['הדיונות', 'השיירה השרופה', 'הגדר והבונקר', 'מחנה האספקה', 'הרכס', 'השריון'];
   const SCENE_RADIO = [
-    'סמל, השחר עולה. נקה את העמדות מאחורי שקי החול!',
+    NAME + ', השחר עולה. נקה את העמדות מאחורי שקי החול!',
     'שיירה שרופה לפנינו. היזהר מג׳יפים!',
     'גדר תיל ובונקר. זרוק רימון לתוך החרך!',
     'מחנה אספקה. החביות מלאות דלק, תירה בהן!',
@@ -314,18 +319,44 @@
   let L = null;
   const ENTS = [], PROJS = [], ITEMS = [], POPS = [], MYNADES = [];
 
-  function startGame() {
+  function startGame(cp) {
     L = { scene: -1, lives: 5, max: 5, score: 0, shots: 0, hits: 0, kills: 0, heads: 0, neutral: 0, combo: 0, maxCombo: 0, dmgTaken: 0, blocked: 0,
       inv: { uzi: weapon('uzi', true) }, cur: 'uzi', swapT: 0, duckK: 0, slowT: 0, radio: null, hint: null, phase: 'move', pt: 0, time: 0 };
     ENTS.length = 0; PROJS.length = 0; ITEMS.length = 0;
     G.screen = 'play'; showScreen(null);
     S.init(); S.startMusic('six');
-    L.cam = { a: new T.Vector3(-14, 16, 34), ay: 0.5, b: stopPos(0), by: STOPS[0].yaw, t: 0, dur: 3.6, intro: true }; L.next = 0;
+    if (cp) {
+      Object.assign(L, cp.stats || {}); L.score = cp.score; L.lives = Math.max(2, cp.lives); L.inv = {};
+      Object.keys(cp.inv || {}).forEach(k => { if (!WEAPONS[k]) return; const w = weapon(k, k === 'uzi'); w.ammo = cp.inv[k].ammo; if (k !== 'uzi') w.reserve = cp.inv[k].reserve; L.inv[k] = w; });
+      if (!L.inv.uzi) L.inv.uzi = weapon('uzi', true);
+      L.cur = L.inv[cp.cur] ? cp.cur : 'uzi'; L.fromCp = true;
+    }
+    const tgt = cp ? cp.scene : 0;
+    L.cam = { a: cp ? stopPos(tgt).add(new T.Vector3(-6, 7, 14)) : new T.Vector3(-14, 16, 34), ay: cp ? 0.3 : 0.5, b: stopPos(tgt), by: STOPS[tgt].yaw, t: 0, dur: cp ? 2.4 : 3.6, intro: true }; L.next = tgt;
+    if (PF) { PROFILE.level(PF, LV).plays++; PROFILE.save(PF); }
   }
+  // נקודת ביקורת בתחילת כל אזור
+  function saveCheckpoint() {
+    if (!PF || L.scene < 0) return;
+    const inv = {}; Object.keys(L.inv).forEach(k => { const w = L.inv[k]; if (w) inv[k] = { ammo: w.ammo, reserve: w.base ? null : w.reserve }; });
+    PROFILE.level(PF, LV).checkpoint = { scene: L.scene, score: L.score, lives: L.lives, inv, cur: L.cur, at: Date.now(),
+      stats: { shots: L.shots, hits: L.hits, kills: L.kills, heads: L.heads, neutral: L.neutral, dmgTaken: L.dmgTaken, blocked: L.blocked, maxCombo: L.maxCombo } };
+    PROFILE.save(PF);
+  }
+  function checkpoint() { return PF ? PROFILE.level(PF, LV).checkpoint : null; }
+  function reloadInto(mode) { try { sessionStorage.setItem('kav-start', mode); } catch (e) { } location.reload(); }
+  function pause() {
+    if (G.screen !== 'play' || !L) return;
+    G.screen = 'pause'; G.duck = false; G.down = false; S.stopMusic();
+    $('pause-text').textContent = L.scene >= 0 ? `${NAME}, אתה באזור ${L.scene + 1} מתוך ${NSC} עם ${L.score.toLocaleString('he-IL')} נקודות. אם תצא עכשיו, תחזור לתחילת האזור הזה עם הניקוד והנשקים שהיו לך בו.` : `${NAME}, השלב עוד לא התחיל.`;
+    showScreen('pause');
+  }
+  function resumeGame() { if (G.screen !== 'pause') return; G.screen = 'play'; showScreen(null); last = performance.now(); S.startMusic('six'); }
   function stopPos(i) { const p = STOPS[i].pos; return new T.Vector3(p[0], groundH(p[0], p[1]) + 1.65, p[1]); }
 
   function beginScene(i) {
     L.scene = i; L.phase = 'fight'; L.pt = 0;
+    saveCheckpoint();
     L.queue = WAVES[i].slice(); L.spawnT = 0.8; L.maxActive = Math.min(5, 2 + Math.ceil(i / 2)); L.crate = false;
     SPOTS[i].forEach(s => { s.busy = false; if (s.k === 'pop' || s.k === 'prone') s.top = coverTopAt(i, s); });
     if (i === 5) L.bossT = 2.5;
@@ -499,7 +530,7 @@
       if (rand() < 0.4) S.play('ricochet'); return;
     }
     L.lives--; L.dmgTaken++; L.combo = 0; G.dmg = 1; G.shake = Math.max(G.shake, 0.6); S.play('hurt');
-    if (rand() < 0.35) radio(['נפגעת! תתכופף!', 'חובש! לפה!', 'תמשיך לירות, סמל!'][Math.floor(rand() * 3)]);
+    if (rand() < 0.35) radio(['נפגעת! תתכופף!', 'חובש! לפה!', 'תמשיך לירות, ' + NAME + '!'][Math.floor(rand() * 3)]);
     if (L.lives <= 0) { L.lives = 0; G.screen = 'dying'; setTimeout(gameOver, 900); }
   }
 
@@ -752,7 +783,7 @@
   function frame(now) {
     const rdt = Math.min(0.05, (now - last) / 1000); last = now; G.t += rdt;
     if (G.screen === 'play' || G.screen === 'dying') update(rdt);
-    if (G.screen !== 'loading') render(rdt);
+    if (G.screen !== 'loading') render(G.screen === 'pause' ? 0 : rdt);
     requestAnimationFrame(frame);
   }
 
@@ -843,7 +874,7 @@
     dpr = Math.min(2, window.devicePixelRatio || 1);
     [$('gl'), hud].forEach(c => { c.style.width = cw + 'px'; c.style.height = ch + 'px'; });
     hud.width = Math.round(cw * dpr); hud.height = Math.round(ch * dpr);
-    if (renderer) { const pr = Math.min(1.6, dpr); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); composer.setPixelRatio(pr); composer.setSize(cw, ch); }
+    if (renderer) { const pr = LOW ? 1 : Math.min(1.6, dpr); renderer.setPixelRatio(pr); renderer.setSize(cw, ch, false); composer.setPixelRatio(pr); composer.setSize(cw, ch); }
   }
   window.addEventListener('resize', resize);
   const tmpV = new T.Vector3();
@@ -924,7 +955,8 @@
     for (let i = 0; i < L.max; i++) { const x = W - 40 - i * 38, y = 40, on = i < L.lives; hc.save(); hc.translate(x, y); hc.scale(1.15, 1.15); hc.fillStyle = on ? '#e8443a' : 'rgba(255,255,255,0.18)'; hc.beginPath(); hc.moveTo(0, 8); hc.bezierCurveTo(-16, -4, -10, -16, 0, -8); hc.bezierCurveTo(10, -16, 16, -4, 0, 8); hc.fill(); hc.restore(); }
     hc.direction = 'ltr'; hc.font = '400 50px "Karantina", "Assistant", sans-serif'; hc.textAlign = 'left';
     hc.fillStyle = 'rgba(0,0,0,0.5)'; hc.fillText(String(L.score).padStart(7, '0'), 26, 56); hc.fillStyle = '#fff'; hc.fillText(String(L.score).padStart(7, '0'), 24, 54);
-    if (L.combo >= 5) txt(`קומבו ${L.combo}  x${1 + Math.min(3, Math.floor(L.combo / 5) * 0.5)}`, 30, 88, 24, '#ffd85a', 'left');
+    txt(`${PF ? PROFILE.rank(PF) : 'סמל'} ${NAME}`, 26, 82, 17, 'rgba(255,255,255,0.75)', 'left');
+    if (L.combo >= 5) txt(`קומבו ${L.combo}  x${1 + Math.min(3, Math.floor(L.combo / 5) * 0.5)}`, 30, 110, 24, '#ffd85a', 'left');
     txt('ששת הימים  |  הפריצה בסיני', W / 2, 32, 20, 'rgba(255,255,255,0.85)');
     for (let i = 0; i < NSC; i++) { hc.fillStyle = i < L.scene ? '#e0a84a' : i === L.scene ? '#fff' : 'rgba(255,255,255,0.3)'; hc.beginPath(); hc.arc(W / 2 + (i - (NSC - 1) / 2) * 22, 50, i === L.scene ? 6 : 4, 0, 7); hc.fill(); }
     if (L.boss && L.boss.state !== 'dead') { const tot = L.boss.parts.reduce((a, p) => a + p.max, 0), cur = L.boss.parts.reduce((a, p) => a + (p.alive ? p.hp : 0), 0); hc.fillStyle = 'rgba(0,0,0,0.6)'; hc.fillRect(W / 2 - 263, 70, 526, 18); hc.fillStyle = '#d8423a'; hc.fillRect(W / 2 - 260, 73, 520 * cur / tot, 12); txt('טנק כבד', W / 2, 112, 22, '#ffcf9a'); }
@@ -955,7 +987,7 @@
     }
     if (L.hint) { hc.globalAlpha = Math.min(1, L.hint.t * 2); txt(L.hint.text, W / 2, L.hint.big ? 300 : 250, L.hint.big ? 64 : 28, L.hint.big ? '#ffcf9a' : '#fff', 'center', L.hint.big ? '"Karantina", sans-serif' : undefined); hc.globalAlpha = 1; }
     if (L.phase === 'clear') txt(L.scene < NSC - 1 ? 'האזור נקי!' : 'ניצחון!', W / 2, H / 2, 96, '#e0a84a', 'center', '"Karantina", sans-serif');
-    if (L.phase === 'move' && L.cam.intro && L.cam.t < 0.9) { hc.globalAlpha = 1 - Math.max(0, L.cam.t - 0.6) / 0.3; txt('שלב 2', W / 2, H / 2 - 40, 36, '#e0a84a', 'center', '"Karantina", sans-serif'); txt('הפריצה בסיני', W / 2, H / 2 + 40, 96, '#fff', 'center', '"Karantina", sans-serif'); hc.globalAlpha = 1; }
+    if (L.phase === 'move' && L.cam.intro && L.cam.t < 0.9) { hc.globalAlpha = 1 - Math.max(0, L.cam.t - 0.6) / 0.3; txt(L.fromCp ? 'ממשיכים מנקודת הביקורת' : 'שלב 2', W / 2, H / 2 - 40, 36, '#e0a84a', 'center', '"Karantina", sans-serif'); txt(L.fromCp ? `אזור ${L.next + 1}: ${SCENE_NAMES[L.next]}` : 'הפריצה בסיני', W / 2, H / 2 + 40, L.fromCp ? 80 : 96, '#fff', 'center', '"Karantina", sans-serif'); hc.globalAlpha = 1; }
     if (L.lives === 1 && G.screen === 'play') { const g = hc.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9); g.addColorStop(0, 'rgba(255,0,0,0)'); g.addColorStop(1, `rgba(200,0,0,${0.25 + 0.15 * Math.sin(G.t * 5)})`); hc.fillStyle = g; hc.fillRect(0, 0, W, H); }
     if (G.screen === 'play' && dk < 0.5) drawCross();
   }
@@ -978,18 +1010,21 @@
   }
 
   // ---------- מסכים ----------
-  function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); hud.classList.toggle('playing', !id); }
+  function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id); hud.classList.toggle('playing', !id); const pb = $('pause-btn'); if (pb) pb.hidden = !!id; }
   function levelComplete() {
     G.screen = 'end'; S.stopMusic(); S.play('clear');
     const acc = L.shots ? L.hits / L.shots : 0; L.score += L.lives * 300 + Math.round(acc * 2000);
     let stars = 1; if (acc >= 0.5) stars++; if (L.dmgTaken <= 2) stars++;
-    $('end-title').textContent = 'השלב הושלם';
+    let isBest = false;
+    if (PF) { const lv = PROFILE.level(PF, LV); isBest = L.score > lv.best; lv.best = Math.max(lv.best, L.score); lv.stars = Math.max(lv.stars, stars); lv.completed = true; lv.checkpoint = null; lv.last = L.score; PROFILE.save(PF); }
+    $('retry-cp').hidden = true; $('again').textContent = 'שחק שוב';
+    $('end-title').textContent = isBest ? 'שיא חדש!' : 'השלב הושלם';
     $('end-stars').innerHTML = [0, 1, 2].map(i => `<span class="star ${i < stars ? 'on' : ''}">★</span>`).join('');
     $('end-stats').innerHTML = [['ניקוד', L.score.toLocaleString('he-IL')], ['דיוק', Math.round(acc * 100) + '%'], ['נוטרלו', L.kills], ['פגיעות ראש', L.heads], ['ניטרולים', L.neutral], ['כדורים שנבלמו במחסה', L.blocked]].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
-    $('end-story').textContent = 'הטנק עולה באש והעמדות נוקו. השמש כבר גבוהה מעל החולות, ורפי מסמן לגדוד להמשיך מערבה.';
+    $('end-story').textContent = `הטנק עולה באש והעמדות נוקו. השמש כבר גבוהה מעל החולות. רפי לוחץ לך את היד: כל הכבוד, ${NAME}. ההתקדמות נשמרה.`;
     showScreen('end');
   }
-  function gameOver() { G.screen = 'end'; S.stopMusic(); $('end-title').textContent = 'נפגעת'; $('end-stars').innerHTML = ''; $('end-stats').innerHTML = `<div class="stat"><span>ניקוד</span><b>${L.score.toLocaleString('he-IL')}</b></div><div class="stat"><span>אזור</span><b>${L.scene + 1} מתוך ${NSC}</b></div>`; $('end-story').textContent = 'רפי גורר אותך מאחורי שק חול. טיפ: התכופף כשהטבעת על האויב נהיית אדומה.'; showScreen('end'); }
+  function gameOver() { G.screen = 'end'; S.stopMusic(); $('retry-cp').hidden = !checkpoint(); $('retry-cp').textContent = `נסה שוב מאזור ${L.scene + 1}`; $('end-title').textContent = 'נפגעת'; $('end-stars').innerHTML = ''; $('end-stats').innerHTML = `<div class="stat"><span>ניקוד</span><b>${L.score.toLocaleString('he-IL')}</b></div><div class="stat"><span>אזור</span><b>${L.scene + 1} מתוך ${NSC}</b></div>`; $('end-story').textContent = `רפי גורר אותך מאחורי שק חול. אל תדאג, ${NAME}, ההתקדמות שמורה מתחילת האזור. טיפ: התכופף כשהטבעת על האויב נהיית אדומה.`; showScreen('end'); }
 
   // ---------- קלט ----------
   function toGame(e) { const r = hud.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
@@ -1013,6 +1048,7 @@
   hud.addEventListener('wheel', e => { if (G.screen === 'play') { e.preventDefault(); cycle(e.deltaY > 0 ? 1 : -1); } }, { passive: false });
   const DUCK_KEYS = ['Space', 'ShiftLeft', 'ShiftRight', 'KeyC'];
   window.addEventListener('keydown', e => {
+    if ((e.code === 'Escape' || e.code === 'KeyP') && (G.screen === 'play' || G.screen === 'pause')) { G.screen === 'play' ? pause() : resumeGame(); return; }
     if (G.screen !== 'play') return;
     if (DUCK_KEYS.includes(e.code)) { e.preventDefault(); G.duck = true; }
     if (e.code === 'KeyR') reload();
@@ -1021,18 +1057,32 @@
   });
   window.addEventListener('keyup', e => { if (DUCK_KEYS.includes(e.code)) G.duck = false; });
   window.addEventListener('blur', () => { G.duck = false; G.down = false; });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 
   // ---------- אתחול ----------
   function typeBrief() {
-    const t = 'חמישה ביוני, שחר. הטנקים כבר פרצו קדימה, ועכשיו תורנו לנקות את מה שנשאר מאחור: עמדות בדיונות, שיירה שרופה, בונקר, מחנה אספקה ורכס. ובסוף מחכה טנק. כשהטבעת על האויב נהיית אדומה, תתכופף.';
+    const t = 'חמישה ביוני, שחר, ' + NAME + '. הטנקים כבר פרצו קדימה, ועכשיו תורנו לנקות את מה שנשאר מאחור: עמדות בדיונות, שיירה שרופה, בונקר, מחנה אספקה ורכס. ובסוף מחכה טנק. כשהטבעת על האויב נהיית אדומה, תתכופף.';
     const el = $('brief-text'); el.textContent = ''; let n = 0; const iv = setInterval(() => { n += 2; el.textContent = t.slice(0, n); if (n >= t.length) clearInterval(iv); }, 16);
   }
-  $('go').onclick = () => { S.init(); startGame(); };
-  $('again').onclick = () => { location.reload(); };
+  $('go').onclick = () => { S.init(); if (PF) { PROFILE.level(PF, LV).checkpoint = null; PROFILE.save(PF); } startGame(); };
+  $('resume').onclick = () => { S.init(); startGame(checkpoint()); };
+  $('again').onclick = () => reloadInto('new');
+  $('retry-cp').onclick = () => reloadInto('checkpoint');
+  $('p-resume').onclick = () => resumeGame();
+  $('p-save').onclick = () => { location.href = 'index.html'; };
+  $('p-restart').onclick = () => reloadInto(checkpoint() ? 'checkpoint' : 'new');
+  $('pause-btn').onclick = () => pause();
   resize();
   loadAll(k => { $('bar').style.width = Math.round(k * 100) + '%'; }).then(() => {
     initGL(); resize(); G.screen = 'menu'; showScreen('brief'); typeBrief();
     $('brief-face').src = TEX.commanderImg.src;
+    const cp = checkpoint();
+    if (cp) {
+      $('resume').hidden = false; $('resume').textContent = `המשך מאזור ${cp.scene + 1}: ${SCENE_NAMES[cp.scene]}`; $('go').textContent = 'מההתחלה'; $('go').classList.add('ghost');
+      $('saveinfo').hidden = false; $('saveinfo').textContent = `שמור עבור ${NAME}: אזור ${cp.scene + 1} מתוך ${NSC}, ${cp.score.toLocaleString('he-IL')} נקודות, ${cp.lives} חיים. נשמר ${new Date(cp.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}.`;
+    }
+    let mode = null; try { mode = sessionStorage.getItem('kav-start'); sessionStorage.removeItem('kav-start'); } catch (e) { }
+    if (mode === 'checkpoint' && cp) startGame(cp); else if (mode === 'new') { if (PF) { PROFILE.level(PF, LV).checkpoint = null; PROFILE.save(PF); } startGame(); }
   }).catch(err => { $('load-text').textContent = 'טעינת הגרפיקה נכשלה. צריך לפתוח את המשחק דרך שרת (ראה README).'; console.error(err); });
   requestAnimationFrame(frame);
 
