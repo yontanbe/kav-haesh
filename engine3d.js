@@ -17,8 +17,8 @@
   const NAME = window.PROFILE ? PROFILE.displayName(PF) : 'דני';
   const LOW = PF && PF.settings.quality === 'low';
   const DIFFS = { easy: { lives: 7, aim: 1.35, extra: -1, name: 'קל' }, normal: { lives: 5, aim: 1, extra: 0, name: 'רגיל' }, hard: { lives: 4, aim: 0.75, extra: 1, name: 'קשה' } };
-  const DIFF = DIFFS[(PF && PF.settings.difficulty) || 'normal'] || DIFFS.normal;
-  const DKEY = (PF && PF.settings.difficulty) || 'normal';
+  let DKEY = DIFFS[(PF && PF.settings.difficulty)] ? PF.settings.difficulty : 'normal';
+  let DIFF = DIFFS[DKEY];
   if (PF) { S.sfxOn = PF.settings.sound; S.musicOn = PF.settings.music; S.voiceOn = false; }
   const NSC = LD.scenes.length;
   const fill = s => (s || '').replace(/\{name\}/g, NAME);
@@ -319,7 +319,7 @@
 
   function startGame(cp) {
     L = { scene: -1, lives: DIFF.lives, max: DIFF.lives, score: 0, shots: 0, hits: 0, kills: 0, heads: 0, neutral: 0, combo: 0, maxCombo: 0, dmgTaken: 0, blocked: 0, civHit: 0, multi: 0,
-      inv: { uzi: weapon('uzi', true) }, cur: 'uzi', swapT: 0, duckK: 0, slowT: 0, radio: null, hint: null, phase: 'move', pt: 0, time: 0, toasts: [], flareT: 4 };
+      inv: { uzi: weapon('uzi', true) }, cur: 'uzi', swapT: 0, duckK: 0, slowT: 0, radio: null, hint: null, phase: 'move', pt: 0, time: 0, toasts: [], flareT: 4, hitDirs: [], nadeWarned: false };
     ENTS.length = 0; PROJS.length = 0; ITEMS.length = 0;
     G.screen = 'play'; showScreen(null);
     S.init(); S.startMusic('six');
@@ -358,10 +358,26 @@
     saveCheckpoint();
     L.queue = sc.wave.slice(); L.spawnT = 0.8; L.maxActive = clamp(Math.min(5, 2 + Math.ceil(i / 2)) + DIFF.extra + (sc.maxActiveAdd || 0), 1, 6); L.crate = false;
     sc.spots.forEach(s => { s.busy = false; if (s.k === 'pop' || s.k === 'prone') s.top = coverTopAt(i, s); });
+    markVisible(i);
     if (LD.boss && LD.boss.scene === i) L.bossT = 2.5;
     hint(`אזור ${i + 1} מתוך ${NSC}: ${sc.name}`);
     radio(fill(sc.radio), `l${LEVEL_NO}s${i}`);
     if (sc.tip) setTimeout(() => { if (L && L.scene === i) hint(isTouch ? (sc.tipTouch || sc.tip) : sc.tip); }, 3200);
+  }
+  // מסמן אילו נקודות הופעה נמצאות בתוך המסך מעמדת המצלמה, כדי שאף אחד לא יירה מחוץ לתמונה
+  const visCam = new T.PerspectiveCamera(37, W / H, 0.1, 1200), visV = new T.Vector3();
+  function inView(x, y, z) { visV.set(x, y, z).project(visCam); return visV.z < 1 && Math.abs(visV.x) < 0.86 && visV.y > -0.72 && visV.y < 0.88; }
+  function markVisible(i) {
+    visCam.position.copy(stopPos(i)); visCam.rotation.set(0, STOPS[i].yaw, 0, 'YXZ'); visCam.updateMatrixWorld(); visCam.updateProjectionMatrix();
+    LD.scenes[i].spots.forEach(s => {
+      if (s.k === 'run') {
+        const xs = []; for (let k = 0; k <= 40; k++) { const lx = lerp(s.x0, s.x1, k / 40), [x, z] = LW(i, lx, s.d); if (inView(x, groundH(x, z) + 1.3, z)) xs.push(x); }
+        s.visX = xs.length > 3 ? [Math.min(...xs), Math.max(...xs)] : null; s.vis = !!s.visX; return;
+      }
+      const [x, z] = LW(i, s.k === 'side' ? s.x + s.dx : s.x, s.d), gy = groundH(x, z);
+      const hy = s.k === 'pop' ? gy + (s.top || 1.1) + 0.8 : s.k === 'prone' ? gy + (s.top || 1.5) + 0.5 : s.k === 'win' ? gy + s.sill + 0.6 : gy + 1.2;
+      s.vis = inView(x, hy, z);
+    });
   }
   function coverTopAt(i, s) {
     if (s.top0 === undefined) s.top0 = s.top;
@@ -381,7 +397,7 @@
 
   // ---------- אויבים ----------
   const spotsOf = () => LD.scenes[L.scene].spots;
-  function freeSpot(kinds) { const c = spotsOf().filter(s => !s.busy && kinds.includes(s.k)); return c.length ? c[Math.floor(rand() * c.length)] : null; }
+  function freeSpot(kinds) { const c = spotsOf().filter(s => !s.busy && s.vis !== false && kinds.includes(s.k)); return c.length ? c[Math.floor(rand() * c.length)] : null; }
   function aimTime(e) { const m = { heavy: 1.15, jeep: 1.3, officer: 0.8, prone: 0.9, bunker: 1.1, win: 0.95 }[e.type] || 1; return 2.0 * m * DIFF.aim * (LD.aimMult || 1) * (0.9 + rand() * 0.3); }
   function makeCard() {
     const geo = new T.PlaneGeometry(1, 1); geo.translate(0, 0.5, 0);
@@ -404,7 +420,10 @@
     const sp0 = specOf(raw), type = sp0.t, i = L.scene, sc = LD.scenes[i];
     if (type === 'jeep') {
       const dir = rand() < 0.5 ? 1 : -1, [lx, z] = LW(i, 0, (sc.jeepD || 18) + rand() * 1.5);
-      const e = { type: 'jeep', hp: 16, max: 16, state: 'drive', t: 0, dir, z, x: lx + (dir > 0 ? -30 : 34), stopX: lx - 4 + rand() * 8, hostile: true, flash: 0 };
+      // הג'יפ עוצר רק במקום שרואים אותו
+      const xs = []; for (let k = -12; k <= 12; k++) { const x = lx + k; if (inView(x - 1.6, groundH(x, z) + 2.4, z) && inView(x + 1.6, groundH(x, z) + 2.4, z)) xs.push(x); }
+      const stopX = xs.length ? lerp(Math.min(...xs), Math.max(...xs), 0.3 + rand() * 0.4) : lx;
+      const e = { type: 'jeep', hp: 16, max: 16, state: 'drive', t: 0, dir, z, x: lx + (dir > 0 ? -30 : 34), stopX, hostile: true, flash: 0 };
       e.mesh = makeCard(); e.flipX = dir < 0; setPose(e, 'jeep');
       e.mesh.position.set(e.x, groundH(e.x, z), z); ENTS.push(e); S.play('alert'); radio('ג׳יפ עם מקלע! השמד אותו!', 'jeep'); return true;
     }
@@ -435,7 +454,7 @@
       const [x, z] = LW(i, sp.x, sp.d); const gy = groundH(x, z); e.base = new T.Vector3(x, gy, z); e.clipY = gy + sp.sill;
       e.mesh.material.clippingPlanes = [new T.Plane(new T.Vector3(0, 1, 0), -e.clipY), new T.Plane(new T.Vector3(1, 0, 0), -(x - sp.w / 2)), new T.Plane(new T.Vector3(-1, 0, 0), x + sp.w / 2)];
     }
-    if (sp.k === 'run') { const [x0] = LW(i, sp.x0, sp.d), [x1, z] = LW(i, sp.x1, sp.d); e.dir = rand() < 0.5 ? 1 : -1; e.rx0 = x0; e.rx1 = x1; e.z = z; e.x = e.dir > 0 ? x0 : x1; e.stopX = lerp(x0, x1, 0.3 + rand() * 0.4); e.state = 'run'; e.k = 1; e.base = at(e.x, z); e.flipX = e.dir < 0 && !civ; setPose(e, civ ? (rand() < 0.5 ? 'civMan' : 'civWoman') : 'run'); }
+    if (sp.k === 'run') { const [x0] = LW(i, sp.x0, sp.d), [x1, z] = LW(i, sp.x1, sp.d); e.dir = rand() < 0.5 ? 1 : -1; e.rx0 = x0; e.rx1 = x1; e.z = z; e.x = e.dir > 0 ? x0 : x1; e.stopX = sp.visX ? lerp(sp.visX[0], sp.visX[1], 0.25 + rand() * 0.5) : lerp(x0, x1, 0.3 + rand() * 0.4); e.state = 'run'; e.k = 1; e.base = at(e.x, z); e.flipX = e.dir < 0 && !civ; setPose(e, civ ? (rand() < 0.5 ? 'civMan' : 'civWoman') : 'run'); }
     else {
       if (!e.base) { const [x, z] = LW(i, sp.x, sp.d); e.base = at(x, z); }
       if (sp.k === 'side') { e.x0 = e.base.x; e.x1 = e.base.x + sp.dx; }
@@ -545,11 +564,16 @@
     flashAt(p, e.type === 'jeep' || e.type === 'bunker' ? 1.6 : e.type === 'officer' ? 0.8 : 1.1);
     S.play(e.type === 'heavy' || e.type === 'bunker' ? 'mg' : 'enemyShot');
     tracer3(p, camera.position.clone().add(new T.Vector3((rand() - 0.5) * 0.6, -0.3, 0)), '#ffcf80');
-    playerHit();
+    playerHit(false, p);
   }
   function ducked() { return L && L.duckK > 0.55; }
-  function playerHit(isPenalty) {
+  // כיוון ביחס למצלמה: 0 קדימה, חיובי ימינה
+  const camQ = new T.Quaternion();
+  function dirAngle(pos) { camQ.copy(camera.quaternion).invert(); const v = pos.clone().sub(camera.position).applyQuaternion(camQ); return Math.atan2(v.x, -v.z); }
+  function playerHit(isPenalty, from) {
     if (G.screen !== 'play' || (L.phase !== 'fight' && !isPenalty)) return;
+    if (from) L.hitDirs.push({ a: dirAngle(from), t: 1.4, blocked: ducked() });
+    if (from && !ducked() && !L.dirTip) { L.dirTip = true; setTimeout(() => { if (L) hint('הקשת האדומה מראה מאיפה ירו. חץ בקצה המסך מראה איום שלא רואים'); }, 400); }
     if (ducked() && !isPenalty) {
       L.blocked++; const sb = camera.position.clone().add(new T.Vector3((rand() - 0.5) * 1.6, -0.1 + rand() * 0.3, -1.6)); sandPuff(sb, 0.5); sparks(sb, 4);
       if (rand() < 0.4) S.play('ricochet'); return;
@@ -596,13 +620,14 @@
     else if (e.sway) e.x = e.tx + Math.sin(e.t * 0.35) * e.sway;
     m.position.set(e.x, groundH(e.x, e.z) - (e.fort ? 0.3 : 0.25), e.z);
     if (!e.fort) m.position.y += Math.sin(G.t * 14) * (e.state === 'drive' ? 0.04 : 0.01);
+    if (e.state !== 'fight') return;
     e.shellT -= dt;
     const sp = e.parts.find(p => p.id === e.shellPart);
     if (e.shellT <= 0 && sp.alive && !partLocked(e, sp) || (e.shellT <= 0 && e.fort && sp.alive)) { e.shellT = (e.fort ? 5 : 4) + rand() * 1.5; const mp = muzzleWorld(e); flashAt(mp, 4); S.play('explosion', { vol: 0.6 }); smoke(mp, 2.5); fireProj('shell', mp); G.shake = Math.max(G.shake, 0.4); }
     e.parts.forEach(p => {
       if (!p.alive || p.fire !== 'aim') return;
       p.timer -= dt; if (p.timer <= 0 && !p.aimDur) { p.aimDur = (e.fort ? 2.0 : 2.2) * DIFF.aim; p.aim = 0; }
-      if (p.aimDur) { p.aim += dt; if (p.aim >= p.aimDur) { const w = partWorld(e, p); flashAt(w, 1.3); S.play('mg'); playerHit(); p.aimDur = 0; p.timer = 2.4 + rand(); } }
+      if (p.aimDur) { p.aim += dt; if (p.aim >= p.aimDur) { const w = partWorld(e, p); flashAt(w, 1.3); S.play('mg'); playerHit(false, w); p.aimDur = 0; p.timer = 2.4 + rand(); } }
     });
   }
 
@@ -612,11 +637,11 @@
   function fireProj(kind, from) {
     const to = camera.position.clone().add(new T.Vector3((rand() - 0.5) * 1.2, -0.5 + rand() * 0.3, -1.4));
     let mesh;
-    if (kind === 'grenade') mesh = nadeMesh();
+    if (kind === 'grenade') { mesh = nadeMesh(); mesh.scale.setScalar(1.6); const gl = new T.Sprite(new T.SpriteMaterial({ map: partTex.soft, color: lin('#ff3a20'), blending: T.AdditiveBlending, depthWrite: false })); gl.scale.setScalar(0.55); mesh.add(gl); mesh.userData.glow = gl; }
     else { mesh = new T.Sprite(new T.SpriteMaterial({ map: partTex.soft, color: lin('#ffb040'), blending: T.AdditiveBlending, depthWrite: false })); mesh.scale.setScalar(1.4); scene.add(mesh); }
     PROJS.push({ kind, from, to, t: 0, dur: (kind === 'grenade' ? 1.7 : 2.0) * Math.max(0.85, DIFF.aim), arc: kind === 'grenade' ? 3.2 : 3, mesh, hp: kind === 'grenade' ? 1 : 2, r: kind === 'grenade' ? 0.7 : 0.9 });
   }
-  function throwGrenadeAtPlayer(from) { S.play('throw'); fireProj('grenade', from); if (rand() < 0.4) radio('רימון! תפיל אותו באוויר!', 'grenade'); }
+  function throwGrenadeAtPlayer(from) { S.play('throw'); fireProj('grenade', from); if (!L.nadeWarned || rand() < 0.35) { L.nadeWarned = true; radio('רימון! תפיל אותו באוויר!', 'grenade'); } }
   function throwMine(target) { const m = nadeMesh(); const from = camera.position.clone().add(new T.Vector3(0.3, -0.4, -0.5)); MYNADES.push({ m, from, to: target, t: 0, dur: clamp(from.distanceTo(target) / 22, 0.35, 1.1) }); }
 
   // ---------- אפקטים ----------
@@ -695,12 +720,25 @@
     }
     S.play(w.d.sound);
     const spr = w.d.spread * W * (1 + (G.heat || 0));
-    const hit = resolve(G.mx + (rand() - 0.5) * spr, G.my + (rand() - 0.5) * spr, w.d);
+    const [ax, ay] = isTouch ? touchAssist(G.mx, G.my) : [G.mx, G.my];
+    const hit = resolve(ax + (rand() - 0.5) * spr, ay + (rand() - 0.5) * spr, w.d);
     if (hit) L.hits++; else L.combo = 0;
     if (w.d.auto) G.heat = Math.min(1.5, (G.heat || 0) + 0.1);
     gunFlash = 0.06;
     if (w.ammo === 0 && !w.base && w.reserve <= 0) setTimeout(() => { if (L.inv[w.k] === w) { delete L.inv[w.k]; if (L.cur === w.k) { L.cur = 'uzi'; L.swapT = 0.35; } hint('חזרה לעוזי'); } }, 300);
     else if (w.ammo === 0 && isTouch) setTimeout(reload, 150);
+  }
+  // בטלפון: הקשה קרובה לאויב נצמדת אליו
+  function touchAssist(x, y) {
+    for (const pr of PROJS) { const [sx, sy, sz] = toScreen(pr.mesh.position); if (sz < 1 && Math.hypot(sx - x, sy - y) < 50) return [sx, sy]; }
+    let best = null, bd = 46;
+    ENTS.forEach(e => {
+      if (!e.hostile || e.state === 'dead' || e.state === 'gone' || e.state === 'wait' || e.type === 'tank' || e.type === 'bunker' || e.civ) return;
+      if (e.k !== undefined && e.k < 0.6 && e.state !== 'run' && e.state !== 'run2') return;
+      const c = e.mesh.localToWorld(new T.Vector3(0, e.type === 'jeep' ? 0.5 : 0.7, 0)); const [sx, sy, sz] = toScreen(c); if (sz >= 1) return;
+      const d = Math.hypot(sx - x, sy - y); if (d < bd) { bd = d; best = [sx, sy]; }
+    });
+    return best || [x, y];
   }
   function reload() { const w = curW(); if (w.d.thrown || w.reloading || w.ammo === w.d.mag || (!w.base && w.reserve <= 0)) return; w.reloading = true; w.rt = 0; S.play('reload'); L.needReload = 0; }
 
@@ -901,8 +939,8 @@
       p.t += dt / p.dur; const k = Math.min(1, p.t);
       p.mesh.position.lerpVectors(p.from, p.to, k); p.mesh.position.y += Math.sin(k * Math.PI) * p.arc;
       if (p.kind === 'shell' && rand() < 0.9) smoke(p.mesh.position.clone(), 0.5, false);
-      if (p.kind === 'grenade') { p.mesh.rotation.x += dt * 12; if (rand() < 0.5) sparks(p.mesh.position, 1, '#ffcf6a'); }
-      if (p.t >= 1 && !p.dead) { p.dead = true; G.flash = 0.25; S.play('explosion'); if (!ducked()) { playerHit(); G.shake = 1; } else { L.blocked++; explode(camera.position.clone().add(new T.Vector3(0, -0.4, -2.2)), 0.6); } }
+      if (p.kind === 'grenade') { p.mesh.rotation.x += dt * 12; if (rand() < 0.9) sparks(p.mesh.position, 2, '#ffb050'); const gl = p.mesh.userData.glow; if (gl) { const on = Math.floor(G.t * 12) % 2; gl.scale.setScalar(on ? 0.75 : 0.4); } }
+      if (p.t >= 1 && !p.dead) { p.dead = true; G.flash = 0.25; S.play('explosion'); if (!ducked()) { playerHit(false, p.from); G.shake = 1; } else { L.blocked++; explode(camera.position.clone().add(new T.Vector3(0, -0.4, -2.2)), 0.6); } }
     });
     for (let i = PROJS.length - 1; i >= 0; i--) if (PROJS[i].dead) { scene.remove(PROJS[i].mesh); if (PROJS[i].mesh.isSprite) PROJS[i].mesh.material.dispose(); PROJS.splice(i, 1); }
     MYNADES.forEach(n => { n.t += dt / n.dur; const k = Math.min(1, n.t); n.m.position.lerpVectors(n.from, n.to, k); n.m.position.y += Math.sin(k * Math.PI) * 1.6; n.m.rotation.x += dt * 14; if (k >= 1 && !n.done) { n.done = true; scene.remove(n.m); explode(n.to.clone().add(new T.Vector3(0, 0.4, 0)), 1.3); splash(n.to, 4.5, 12); } });
@@ -916,6 +954,7 @@
     SMOKERS.forEach(s => { if (rand() < rdt * s.rate) smoke(s.pos.clone().add(new T.Vector3((rand() - 0.5) * 2, 0, 0)), 4, true); });
     POPS.forEach(p => p.t -= rdt); for (let i = POPS.length - 1; i >= 0; i--) if (POPS[i].t <= 0) POPS.splice(i, 1);
     L.toasts.forEach(t => t.t -= rdt); L.toasts = L.toasts.filter(t => t.t > 0);
+    L.hitDirs.forEach(h => h.t -= rdt); L.hitDirs = L.hitDirs.filter(h => h.t > 0);
     if (L.radio) { L.radio.t -= rdt; if (L.radio.t <= 0) L.radio = null; }
     if (L.hint) { L.hint.t -= rdt; if (L.hint.t <= 0) L.hint = null; }
   }
@@ -1015,6 +1054,7 @@
       if (e.state === 'throw' && !e.thrown) { const [x, y] = toScreen(muzzleWorld(e)); txt('רימון!', x, y - 30, 22, '#ff6a4a'); }
       if ((e.type === 'heavy' || e.type === 'jeep') && e.hostile && e.state !== 'wait') { const [x, y] = toScreen(e.mesh.position.clone().add(new T.Vector3(0, e.h + 0.25, 0))); hc.fillStyle = 'rgba(0,0,0,0.6)'; hc.fillRect(x - 32, y - 2, 64, 8); hc.fillStyle = '#ffcf4a'; hc.fillRect(x - 30, y, 60 * Math.max(0, e.hp / e.max), 4); }
     });
+    PROJS.forEach(p => { if (p.kind === 'grenade') { const [gx, gy, gz] = toScreen(p.mesh.position); if (gz < 1 && gx > 0 && gx < W && gy > 0 && gy < H) txt(ducked() ? 'רימון!' : 'רימון! ירה בו או התכופף', gx, gy - 34 - p.t * 30, 22, '#ff6a4a'); } });
     PROJS.forEach(p => { const [x, y] = toScreen(p.mesh.position); hc.strokeStyle = p.t > 0.6 && Math.floor(G.t * 10) % 2 ? '#ff3a2a' : 'rgba(255,90,60,0.7)'; hc.lineWidth = 2.5; hc.setLineDash([5, 5]); hc.beginPath(); hc.arc(x, y, 18 + p.t * 46, 0, 7); hc.stroke(); hc.setLineDash([]); });
     ITEMS.forEach(it => {
       const [x, y, z] = toScreen(it.pos); if (z > 1) return; const b = Math.sin(it.t * 5) * 5;
@@ -1051,6 +1091,7 @@
     else if (dk > 0.5) txt('במחסה', W / 2, H - 250, 30, '#9be36a');
     else if ((w.ammo === 0 || L.needReload > 0) && Math.floor(G.t * 4) % 2) txt(isTouch ? 'טען! או התכופף למחסה' : 'טען! R, קליק ימני, או התכופף עם רווח', W / 2, H - 250, 32, '#ff5a4a');
     if (isTouch) [['duck', G.duck ? 'במחסה' : 'מחסה'], ['reload', 'טען']].forEach(([k, label]) => { const b = BTN[k]; hc.fillStyle = k === 'duck' && G.duck ? 'rgba(155,227,106,0.55)' : 'rgba(0,0,0,0.45)'; hc.beginPath(); hc.arc(b.x, b.y, b.r, 0, 7); hc.fill(); hc.strokeStyle = '#e0a84a'; hc.lineWidth = 3; hc.stroke(); txt(label, b.x, b.y + 8, 24, '#fff'); });
+    drawThreats();
     if (L.slowT > 0) txt('הזמן מאט', W / 2, 150, 30, '#ffd85a');
     if (L.radio) {
       const a = Math.min(1, L.radio.t * 2); hc.globalAlpha = a;
@@ -1065,6 +1106,37 @@
     if (L.phase === 'move' && L.cam.intro && L.cam.t < 0.9) { hc.globalAlpha = 1 - Math.max(0, L.cam.t - 0.6) / 0.3; txt(L.fromCp ? 'ממשיכים מנקודת הביקורת' : `שלב ${LEVEL_NO}`, W / 2, H / 2 - 40, 36, '#e0a84a', 'center', '"Karantina", sans-serif'); txt(L.fromCp ? `אזור ${L.next + 1}: ${LD.scenes[L.next].name}` : LD.name, W / 2, H / 2 + 40, L.fromCp ? 80 : 96, '#fff', 'center', '"Karantina", sans-serif'); hc.globalAlpha = 1; }
     if (L.lives === 1 && G.screen === 'play') { const g = hc.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.9); g.addColorStop(0, 'rgba(255,0,0,0)'); g.addColorStop(1, `rgba(200,0,0,${0.25 + 0.15 * Math.sin(G.t * 5)})`); hc.fillStyle = g; hc.fillRect(0, 0, W, H); }
     if (G.screen === 'play' && dk < 0.5) drawCross();
+  }
+  // חץ בקצה המסך לכל איום שלא רואים, וקשת אדומה לכיוון שממנו פגעו
+  function edgeArrow(ang, col, label, pulse) {
+    const cx = W / 2, cy = H / 2 + 10, rx = W / 2 - 80, ry = H / 2 - 110;
+    const x = cx + Math.sin(ang) * rx, y = cy - Math.cos(ang) * ry;
+    hc.save(); hc.translate(x, y); hc.rotate(ang);
+    hc.fillStyle = col; hc.shadowColor = col; hc.shadowBlur = 22; const s = 1.7 + pulse * 0.35; hc.strokeStyle = 'rgba(0,0,0,0.6)'; hc.lineWidth = 3;
+    hc.beginPath(); hc.moveTo(0, -26 * s); hc.lineTo(20 * s, 10 * s); hc.lineTo(0, 2 * s); hc.lineTo(-20 * s, 10 * s); hc.closePath(); hc.stroke(); hc.fill();
+    hc.restore();
+    if (label) txt(label, x - Math.sin(ang) * 30, y + Math.cos(ang) * 50 + 8, 22, col);
+  }
+  function offscreen(pos) { const [x, y, z] = toScreen(pos); return z >= 1 || x < 30 || x > W - 30 || y < 30 || y > H - 30; }
+  function drawThreats() {
+    const pulse = 0.5 + 0.5 * Math.sin(G.t * 10);
+    ENTS.forEach(e => {
+      if (e.state === 'dead' || e.state === 'gone' || !e.hostile) return;
+      let pos = null, k = 0, label = '';
+      if (e.type === 'tank') { const p = e.parts.find(q => q.alive && q.aimDur); if (p) { pos = partWorld(e, p); k = p.aim / p.aimDur; } }
+      else if (e.type === 'bunker') { if (e.aimDur) { pos = muzzleWorld(e); k = e.aim / e.aimDur; } }
+      else if (e.state === 'aim') { pos = e.type === 'jeep' ? muzzleWorld(e) : headWorld(e); k = e.t / e.aim; }
+      else if (e.state === 'throw') { pos = muzzleWorld(e); k = 0.8; label = 'רימון'; }
+      if (!pos || !offscreen(pos)) return;
+      const col = k < 0.5 ? 'rgba(255,210,80,0.95)' : 'rgba(255,60,40,0.95)';
+      edgeArrow(dirAngle(pos), col, label || (k > 0.6 ? 'יורה!' : ''), k > 0.6 ? pulse : 0);
+    });
+    PROJS.forEach(p => { if (offscreen(p.mesh.position)) edgeArrow(dirAngle(p.mesh.position), 'rgba(255,90,40,0.95)', p.kind === 'grenade' ? 'רימון' : 'פגז', pulse); });
+    L.hitDirs.forEach(h => {
+      const a = Math.min(1, h.t / 0.6), cx = W / 2, cy = H / 2, r = 230;
+      hc.save(); hc.translate(cx, cy); hc.rotate(h.a); hc.strokeStyle = h.blocked ? `rgba(200,220,255,${a * 0.7})` : `rgba(255,40,30,${a})`; hc.lineWidth = 14; hc.shadowColor = '#ff2010'; hc.shadowBlur = h.blocked ? 0 : 18;
+      hc.beginPath(); hc.arc(0, 0, r, -Math.PI / 2 - 0.32, -Math.PI / 2 + 0.32); hc.stroke(); hc.restore();
+    });
   }
   function drawGun(dk) {
     const w = curW(), fp = FP[w.k], img = TEX[fp.img + 'Img']; if (!img) return;
@@ -1150,6 +1222,14 @@
   $('brief-level').textContent = `ששת הימים · שלב ${LEVEL_NO} מתוך ${LEVELS.length} · ${LD.place} · ${DIFF.name}`;
   $('brief-name').textContent = LD.name;
   $('load-text').textContent = LD.loading || 'טוען...';
+  function setDiff(k) {
+    if (!DIFFS[k]) return; DKEY = k; DIFF = DIFFS[k];
+    if (PF) { PF.settings.difficulty = k; PROFILE.save(PF); }
+    document.querySelectorAll('#diffpick button').forEach(b => b.setAttribute('aria-checked', b.dataset.d === k ? 'true' : 'false'));
+    $('brief-level').textContent = `ששת הימים · שלב ${LEVEL_NO} מתוך ${LEVELS.length} · ${LD.place}`;
+  }
+  document.querySelectorAll('#diffpick button').forEach(b => b.onclick = () => { setDiff(b.dataset.d); S.init(); S.play('ui'); });
+  setDiff(DKEY);
   $('go').onclick = () => { S.init(); if (PF) { PROFILE.level(PF, LV).checkpoint = null; PROFILE.save(PF); } startGame(); };
   $('resume').onclick = () => { S.init(); startGame(checkpoint()); };
   $('again').onclick = () => reloadInto('new');
