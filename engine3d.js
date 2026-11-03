@@ -1004,7 +1004,7 @@
     if (!L) { const s0 = stopPos(0); yaw = 0.4 + Math.sin(G.t * 0.1) * 0.2; cp = s0.add(new T.Vector3(-10 + Math.sin(G.t * 0.08) * 8, 4.5, 24)); pitch = -0.08; }
     else { cp = (L.camPos || stopPos(0).add(new T.Vector3(-14, 14, 38))).clone(); yaw = L.yaw || 0; pitch = L.pitch || 0; }
     const dk = L ? ease(L.duckK) : 0;
-    const sway = L && L.phase === 'fight' ? [(G.mx / W - 0.5) * 0.12, (G.my / H - 0.5) * 0.06] : [0, 0];
+    const sway = L && L.phase === 'fight' ? [(G.mx / W - 0.5) * 0.05, (G.my / H - 0.5) * 0.025] : [0, 0];
     camera.position.copy(cp); camera.position.y -= dk * 0.95; camera.position.x += dk * 0.15;
     if (G.shake > 0) { camera.position.x += (rand() - 0.5) * 0.12 * G.shake; camera.position.y += (rand() - 0.5) * 0.12 * G.shake; G.shake = Math.max(0, G.shake - rdt * 2); }
     camera.rotation.order = 'YXZ'; camera.rotation.set(pitch - sway[1] * (1 - dk) - dk * 0.12 + Math.sin(G.t * 1.3) * 0.004, yaw - sway[0] * (1 - dk), dk * 0.04);
@@ -1151,14 +1151,29 @@
       hc.beginPath(); hc.arc(0, 0, r, -Math.PI / 2 - 0.32, -Math.PI / 2 + 0.32); hc.stroke(); hc.restore();
     });
   }
+  // הנשק מסתובב מהידית לכיוון הכוונת, כמו יד, ונגרר אחריה בעדינות במקום לקפוץ
+  const GUN = { rot: 0, x: 0, y: 0, t: 0 };
   function drawGun(dk) {
     const w = curW(), fp = FP[w.k], img = TEX[fp.img + 'Img']; if (!img) return;
     const rec = w.recoil, gw = fp.w, gh = gw * img.height / img.width;
+    const dt = Math.min(0.05, Math.max(0, G.t - GUN.t)); GUN.t = G.t; const f = 1 - Math.exp(-dt * 11);
     const drop = (L.swapT > 0 ? Math.sin(L.swapT / 0.35 * Math.PI) * 260 : 0) + dk * 330 + (w.reloading ? 140 : 0);
     const bob = Math.sin(G.t * 1.8) * 3;
-    const gx = W / 2 - gw / 2 + fp.dx + (G.mx - W / 2) * 0.1 + rec * 6, gy = H - gh + 70 + (G.my - H / 2) * 0.05 + rec * 20 + drop + bob;
-    hc.save(); hc.translate(gx + gw / 2, gy + gh); hc.rotate((G.mx - W / 2) * 0.0002 - rec * 0.035); hc.drawImage(img, -gw / 2, -gh, gw, gh); hc.restore();
-    if (gunFlash > 0 && fp.muzzle) { gunFlash -= 0.016; const mx = gx + gw * fp.muzzle[0], my = gy + gh * fp.muzzle[1]; const g = hc.createRadialGradient(mx, my, 0, mx, my, 80); g.addColorStop(0, 'rgba(255,250,220,1)'); g.addColorStop(0.3, 'rgba(255,190,90,0.8)'); g.addColorStop(1, 'rgba(255,140,40,0)'); hc.fillStyle = g; hc.fillRect(mx - 80, my - 80, 160, 160); }
+    const tx = (G.mx - W / 2) * 0.05, ty = (G.my - H / 2) * 0.04;
+    const px = W / 2 + fp.dx, py = H + 70;
+    const m = fp.muzzle || [0.5, 0];
+    const oy = py - gh * 0.35;
+    const a0 = Math.atan2(H * 0.45 - oy, W / 2 - px), a1 = Math.atan2(G.my - oy, G.mx - px);
+    let want = (a1 - a0) * 0.8; want = Math.max(-0.42, Math.min(0.42, want));
+    GUN.rot += (want - GUN.rot) * f; GUN.x += (tx - GUN.x) * f; GUN.y += (ty - GUN.y) * f;
+    const cx = px + GUN.x + rec * 4, cy = py + GUN.y + rec * 20 + drop + bob, rot = GUN.rot - rec * 0.03;
+    hc.save(); hc.translate(cx, cy); hc.rotate(rot); hc.drawImage(img, -gw / 2, -gh, gw, gh); hc.restore();
+    if (gunFlash > 0 && fp.muzzle) {
+      gunFlash -= 0.016;
+      const lx = gw * (m[0] - 0.5), ly = -gh * (1 - m[1]), c = Math.cos(rot), sn = Math.sin(rot);
+      const mx = cx + lx * c - ly * sn, my = cy + lx * sn + ly * c;
+      const g = hc.createRadialGradient(mx, my, 0, mx, my, 80); g.addColorStop(0, 'rgba(255,250,220,1)'); g.addColorStop(0.3, 'rgba(255,190,90,0.8)'); g.addColorStop(1, 'rgba(255,140,40,0)'); hc.fillStyle = g; hc.fillRect(mx - 80, my - 80, 160, 160);
+    }
   }
   function drawCross() {
     const x = G.mx, y = G.my, w = curW(); const r = 14 + (w.d.spread || 0) * 600 * (1 + (G.heat || 0)) + w.recoil * 8;
