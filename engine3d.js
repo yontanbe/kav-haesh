@@ -16,7 +16,7 @@
   const PF = window.PROFILE ? PROFILE.load() : null;
   const NAME = window.PROFILE ? PROFILE.displayName(PF) : 'דני';
   const LOW = PF && PF.settings.quality === 'low';
-  const DIFFS = { easy: { lives: 7, aim: 1.35, extra: -1, name: 'קל' }, normal: { lives: 5, aim: 1, extra: 0, name: 'רגיל' }, hard: { lives: 4, aim: 0.75, extra: 1, name: 'קשה' } };
+  const DIFFS = { easy: { lives: 7, aim: 1.35, extra: -1, name: 'קל', carry: 0.16, every: 7, bonus: 3 }, normal: { lives: 5, aim: 1, extra: 0, name: 'רגיל', carry: 0.1, every: 11, bonus: 2 }, hard: { lives: 4, aim: 0.75, extra: 1, name: 'קשה', carry: 0.05, every: 16, bonus: 1 } };
   let DKEY = DIFFS[(PF && PF.settings.difficulty)] ? PF.settings.difficulty : 'normal';
   let DIFF = DIFFS[DKEY];
   if (PF) { S.sfxOn = PF.settings.sound; S.musicOn = PF.settings.music; S.voiceOn = false; }
@@ -324,7 +324,7 @@
     G.screen = 'play'; showScreen(null);
     S.init(); S.startMusic('six');
     if (cp) {
-      Object.assign(L, cp.stats || {}); L.score = cp.score; L.lives = Math.max(2, cp.lives); L.inv = {};
+      Object.assign(L, cp.stats || {}); L.score = cp.score; L.lives = Math.max(2, cp.lives); L.max = Math.max(L.max, L.lives); L.inv = {};
       Object.keys(cp.inv || {}).forEach(k => { if (!WEAPONS[k]) return; const w = weapon(k, k === 'uzi'); w.ammo = cp.inv[k].ammo; if (k !== 'uzi') w.reserve = cp.inv[k].reserve; L.inv[k] = w; });
       if (!L.inv.uzi) L.inv.uzi = weapon('uzi', true);
       L.cur = L.inv[cp.cur] ? cp.cur : 'uzi'; L.fromCp = true;
@@ -461,6 +461,7 @@
       const pose = type === 'target' ? 'target' : type === 'targetCiv' ? 'targetCiv' : type === 'civ' ? (rand() < 0.5 ? 'civMan' : 'civWoman') : e.type === 'prone' ? 'prone' : e.type === 'heavy' ? 'gunner' : e.type === 'grenadier' ? 'throw' : e.type === 'officer' ? 'officer' : sp.k === 'pop' || sp.k === 'win' ? 'aim' : sp.k === 'side' ? 'kneel' : 'idle';
       setPose(e, pose);
     }
+    if (e.hostile && !target && (L.lifeDue || rand() < DIFF.carry * (e.type === 'officer' || e.type === 'heavy' ? 2.5 : 1))) { e.carry = true; L.lifeDue = false; }
     placeEnt(e); ENTS.push(e);
     if (type === 'civ') { const fem = e.pose === 'civWoman'; setTimeout(() => { if (e.state !== 'gone' && e.state !== 'dead') playVoice(rand() < 0.5 ? (fem ? 'help_f' : 'help_m') : (fem ? 'dontshoot_f' : 'dontshoot_m')); }, 300); }
     return true;
@@ -809,7 +810,7 @@
     const head = !wd.splash && u > hb[0] - 0.04 && u < hb[2] + 0.04 && iy > hb[1] && iy < hb[3] + 0.03;
     const legs = !wd.splash && ['idle', 'kneel', 'officer', 'run', 'throw'].includes(e.pose) && iy > 0.62;
     if (legs && e.type !== 'heavy' && e.hp <= 2 && wd.dmg < 3) {
-      e.state = 'surrender'; e.hostile = false; L.kills++; L.neutral++; stat('kills'); score(250, point, 'ניטרול!'); S.play('hit'); sparks(point, 4, '#fff');
+      e.state = 'surrender'; e.hostile = false; L.kills++; L.neutral++; stat('kills'); score(250, point, 'ניטרול!'); if (e.carry) dropLife(e); lifeCount(); S.play('hit'); sparks(point, 4, '#fff');
       e.flipX = false; setPose(e, 'surrender'); e.k = 1; e.t2 = 0; if (e.spot) e.spot.busy = false;
       if (e.spot && ['run', 'open', 'side'].includes(e.spot.k)) e.mesh.position.y = groundH(e.mesh.position.x, e.mesh.position.z) - 0.05;
       if (L.neutral >= 5) achieve('merciful');
@@ -829,7 +830,8 @@
     e.flipX = false; e.mesh.material.clippingPlanes = null; setPose(e, 'hit'); e.mesh.position.copy(pos);
     const away = new T.Vector3().subVectors(pos, camera.position).setY(0).normalize();
     e.vel = away.multiplyScalar(2.2).add(new T.Vector3(0, 2.4, 0)); e.fall = rand() < 0.5 ? 1 : -1; e.fade = 0;
-    if (rand() < 0.2) dropItem(headWorld(e).add(new T.Vector3(0, 0.6, 0)));
+    if (e.carry) dropLife(e); else if (rand() < 0.2) dropItem(headWorld(e).add(new T.Vector3(0, 0.6, 0)));
+    lifeCount();
   }
   function hitPart(e, p, dmg, point) {
     if (!p.alive || e.state === 'dead') return;
@@ -864,11 +866,20 @@
     if (e.hp <= 0) { e.state = 'dead'; e.hostile = false; explode(e.mesh.position.clone().add(new T.Vector3(0, 1.5, 0.5)), 2.4); e.mesh.material.color.setRGB(0.35, 0.32, 0.3); L.kills++; score(2000, point, 'הבונקר הושמד!'); achieve('bunker_buster'); }
   }
 
+  function heartPath() { hc.beginPath(); hc.moveTo(0, 8); hc.bezierCurveTo(-16, -4, -10, -16, 0, -8); hc.bezierCurveTo(10, -16, 16, -4, 0, 8); hc.closePath(); }
   // ---------- פריטים ----------
   function dropItem(pos) { const r = rand(); const kind = r < 0.35 && L.lives < L.max ? 'heal' : r < 0.55 ? 'slow' : 'weapon'; ITEMS.push({ kind, wk: ['fal', 'mag', 'grenade'][Math.floor(rand() * 3)], pos, t: 0, life: 7.5 }); }
+  function lifeCount() { L.sinceLife = (L.sinceLife || 0) + 1; if (L.sinceLife >= DIFF.every) { L.sinceLife = 0; L.lifeDue = true; } }
+  function dropLife(e) { e.carry = false; L.sinceLife = 0; ITEMS.push({ kind: 'life', pos: headWorld(e).add(new T.Vector3(0, 0.7, 0)), t: 0, life: 9 }); if (!L.lifeTip) { L.lifeTip = true; hint('לב! ירה בו כדי לקבל חיים'); } }
   function collect(it) {
     it.dead = true; S.play('pickup');
     if (it.kind === 'heal') { L.lives = Math.min(L.max, L.lives + 1); pop('מימייה +1', it.pos, '#9be36a'); }
+    else if (it.kind === 'life') {
+      const cap = DIFF.lives + DIFF.bonus;
+      if (L.lives < L.max) { L.lives++; pop('עוד חיים!', it.pos, '#ff7a8a', 1.2); }
+      else if (L.max < cap) { L.max++; L.lives++; pop('לב נוסף!', it.pos, '#ff7a8a', 1.3); }
+      else score(500, it.pos, 'חיים מלאים, בונוס');
+    }
     else if (it.kind === 'slow') { L.slowT = 6; pop('קפה שחור! הזמן מאט', it.pos, '#ffd85a'); }
     else { giveWeapon(it.wk); pop(WEAPONS[it.wk].name + '!', it.pos, '#ffd85a', 1.1); }
     sparks(it.pos, 14, '#fff6c0');
@@ -1049,6 +1060,7 @@
         const [bx, by] = toScreen(e.mesh.position.clone().add(new T.Vector3(0, e.h + 0.3, 0))); hc.fillStyle = 'rgba(0,0,0,0.6)'; hc.fillRect(bx - 52, by - 2, 104, 10); hc.fillStyle = '#d8423a'; hc.fillRect(bx - 50, by, 100 * Math.max(0, e.hp / e.max), 6);
         return;
       }
+      if (e.carry && e.hostile && e.state !== 'wait' && e.k > 0.5) { const [x, y, z] = toScreen(headWorld(e)); if (z < 1) { hc.save(); hc.translate(x, y - 38 + Math.sin(G.t * 5) * 3); hc.scale(1.4, 1.4); heartPath(); hc.fillStyle = '#5be06a'; hc.fill(); hc.strokeStyle = 'rgba(0,0,0,0.6)'; hc.lineWidth = 2; hc.stroke(); hc.restore(); } }
       if (e.civ && e.state === 'idle' && !e.target) { const [x, y] = toScreen(headWorld(e)); txt('אל תירו!', x, y - 40, 20, '#9fd8ff'); }
       if (e.state === 'aim') { const [x, y, z] = toScreen(e.type === 'jeep' ? muzzleWorld(e) : headWorld(e)); if (z < 1) ring(x, y + 10, 64, e.t / e.aim); }
       if (e.state === 'throw' && !e.thrown) { const [x, y] = toScreen(muzzleWorld(e)); txt('רימון!', x, y - 30, 22, '#ff6a4a'); }
@@ -1059,9 +1071,10 @@
     ITEMS.forEach(it => {
       const [x, y, z] = toScreen(it.pos); if (z > 1) return; const b = Math.sin(it.t * 5) * 5;
       if (it.life - it.t < 1.5 && Math.floor(it.t * 10) % 2) return;
-      const g = hc.createRadialGradient(x, y + b, 0, x, y + b, 46); g.addColorStop(0, it.kind === 'heal' ? 'rgba(155,227,106,0.6)' : 'rgba(255,216,90,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)'); hc.fillStyle = g; hc.fillRect(x - 46, y + b - 46, 92, 92);
+      const g = hc.createRadialGradient(x, y + b, 0, x, y + b, 46); g.addColorStop(0, it.kind === 'heal' ? 'rgba(155,227,106,0.6)' : it.kind === 'life' ? 'rgba(255,90,110,0.75)' : 'rgba(255,216,90,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0)'); hc.fillStyle = g; hc.fillRect(x - 46, y + b - 46, 92, 92);
       hc.save(); hc.translate(x, y + b);
       if (it.kind === 'heal') { hc.fillStyle = '#5a6a3a'; hc.beginPath(); hc.ellipse(0, 4, 16, 20, 0, 0, 7); hc.fill(); hc.fillStyle = '#c8c0a0'; hc.fillRect(-5, -22, 10, 8); hc.fillStyle = '#e8443a'; hc.fillRect(-3, -4, 6, 16); hc.fillRect(-8, 1, 16, 6); }
+      else if (it.kind === 'life') { const k = 1.7 + Math.sin(it.t * 8) * 0.12; hc.scale(k, k); heartPath(); hc.fillStyle = '#e8443a'; hc.fill(); hc.strokeStyle = '#fff'; hc.lineWidth = 1.6; hc.stroke(); }
       else if (it.kind === 'slow') { hc.fillStyle = '#f4f0e8'; hc.beginPath(); hc.moveTo(-13, -12); hc.lineTo(13, -12); hc.lineTo(10, 16); hc.lineTo(-10, 16); hc.fill(); hc.fillStyle = '#4a2a14'; hc.fillRect(-11, -10, 22, 5); }
       else { hc.fillStyle = '#5a4a2a'; hc.fillRect(-34, -18, 68, 36); hc.strokeStyle = '#2a2010'; hc.lineWidth = 3; hc.strokeRect(-34, -18, 68, 36); hc.fillStyle = '#ffd85a'; hc.font = '800 13px Assistant, Arial'; hc.textAlign = 'center'; hc.direction = 'rtl'; hc.fillText(WEAPONS[it.wk].name, 0, 5); }
       hc.restore();

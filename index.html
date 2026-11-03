@@ -117,6 +117,8 @@ section.block { padding-block: 70px 0; scroll-margin-top: 70px; }
 .board-note { color: var(--mute); font-size: 15px; padding: 16px; }
 
 .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ctl-note { grid-column: 1 / -1; margin: 0; color: var(--mute); }
+.ctl-note b { color: var(--ink); }
 .ctl { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; min-width: 0; }
 .ctl h3 { font-family: var(--display); font-size: 32px; margin-bottom: 8px; }
 .ctl dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
@@ -238,6 +240,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
         <dt>נשקים</dt><dd>הקשה על המשבצות בתחתית המסך</dd>
         <dt>❚❚</dt><dd>הפסקה, שמירה ויציאה</dd>
       </dl></div>
+      <p class="ctl-note"><b>לבבות:</b> חייל עם לב ירוק מעל הראש מפיל לב כשמחסלים אותו. יורים בלב ומקבלים חיים, וכשהחיים מלאים נוספת משבצת חיים. כמה פעמים זה קורה תלוי ברמת הקושי.</p>
     </div>
   </section>
 
@@ -279,7 +282,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
     <div class="block-h"><h2>הגדרות</h2><p>נשמרות בדפדפן הזה, ונכנסות לתוקף בכניסה הבאה לשלב.</p></div>
     <div class="settings">
       <label for="diff">רמת קושי
-        <select id="diff"><option value="easy">קל: 7 חיים, אויבים איטיים</option><option value="normal">רגיל</option><option value="hard">קשה: 4 חיים, אויבים מהירים</option></select>
+        <select id="diff"><option value="easy">קל: 7 חיים, אויבים איטיים, הרבה לבבות</option><option value="normal">רגיל: 5 חיים, לבבות מדי פעם</option><option value="hard">קשה: 4 חיים, אויבים מהירים, לבבות נדירים</option></select>
       </label>
       <label for="q">גרפיקה
         <select id="q"><option value="high">גבוהה</option><option value="low">חסכונית</option></select>
