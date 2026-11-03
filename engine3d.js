@@ -5,7 +5,7 @@
   const $ = id => document.getElementById(id);
   const rand = Math.random, clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
   const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  const isTouch = matchMedia('(pointer: coarse)').matches;
+  let isTouch = matchMedia('(pointer: coarse)').matches || (navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches);
 
   // ---------- שלב, פרופיל, קושי ----------
   const LEVELS = window.LEVELS67;
@@ -346,13 +346,13 @@
   function reloadInto(mode) { try { sessionStorage.setItem('kav-start', mode); } catch (e) { } location.reload(); }
   function pause() {
     if (G.screen !== 'play' || !L) return;
-    G.screen = 'pause'; G.duck = false; G.down = false; S.stopMusic();
+    G.screen = 'pause'; G.duck = false; G.duckLock = false; G.down = false; S.stopMusic();
     $('pause-text').textContent = L.scene >= 0 ? `${NAME}, אתה באזור ${L.scene + 1} מתוך ${NSC} עם ${L.score.toLocaleString('he-IL')} נקודות. אם תצא עכשיו, תחזור לתחילת האזור הזה עם הניקוד והנשקים שהיו לך בו.` : `${NAME}, השלב עוד לא התחיל.`;
     showScreen('pause');
   }
   function resumeGame() { if (G.screen !== 'pause') return; G.screen = 'play'; showScreen(null); last = performance.now(); S.startMusic('six'); }
 
-  function beginScene(i) {
+  function beginScene(i) { if (G.duckLock) { G.duckLock = false; G.duck = false; }
     const sc = LD.scenes[i];
     L.scene = i; L.phase = 'fight'; L.pt = 0;
     saveCheckpoint();
@@ -1103,7 +1103,7 @@
     if (w.reloading) txt(ducked() ? 'במחסה, טוען...' : 'טוען...', W / 2, H - 250, 26, '#fff');
     else if (dk > 0.5) txt('במחסה', W / 2, H - 250, 30, '#9be36a');
     else if ((w.ammo === 0 || L.needReload > 0) && Math.floor(G.t * 4) % 2) txt(isTouch ? 'טען! או התכופף למחסה' : 'טען! R, קליק ימני, או התכופף עם רווח', W / 2, H - 250, 32, '#ff5a4a');
-    if (isTouch) [['duck', G.duck ? 'במחסה' : 'מחסה'], ['reload', 'טען']].forEach(([k, label]) => { const b = BTN[k]; hc.fillStyle = k === 'duck' && G.duck ? 'rgba(155,227,106,0.55)' : 'rgba(0,0,0,0.45)'; hc.beginPath(); hc.arc(b.x, b.y, b.r, 0, 7); hc.fill(); hc.strokeStyle = '#e0a84a'; hc.lineWidth = 3; hc.stroke(); txt(label, b.x, b.y + 8, 24, '#fff'); });
+    if (isTouch) [['duck', G.duckLock ? 'קום' : G.duck ? 'במחסה' : 'מחסה'], ['reload', 'טען']].forEach(([k, label]) => { const b = BTN[k]; hc.fillStyle = k === 'duck' && G.duck ? 'rgba(155,227,106,0.55)' : 'rgba(0,0,0,0.45)'; hc.beginPath(); hc.arc(b.x, b.y, b.r, 0, 7); hc.fill(); hc.strokeStyle = '#e0a84a'; hc.lineWidth = 3; hc.stroke(); txt(label, b.x, b.y + 8, 24, '#fff'); });
     drawThreats();
     if (L.slowT > 0) txt('הזמן מאט', W / 2, 150, 30, '#ffd85a');
     if (L.radio) {
@@ -1199,22 +1199,26 @@
 
   // ---------- קלט ----------
   function toGame(e) { const r = hud.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
-  const touchDuck = new Set();
+  const touchDuck = new Set(); let duckDownAt = 0;
   hud.addEventListener('pointerdown', e => {
     S.init(); const [x, y] = toGame(e);
     if (G.screen !== 'play') return; e.preventDefault();
     try { hud.setPointerCapture(e.pointerId); } catch (er) { }
     if (e.button === 2) { reload(); return; }
     for (let i = 0; i < ORDER.length; i++) { const s = SLOT(i); if (x > s.x && x < s.x + s.w && y > s.y && y < s.y + s.h) { switchTo(ORDER[i]); return; } }
+    if (e.pointerType === 'touch') isTouch = true;
     if (isTouch) {
-      if (Math.hypot(x - BTN.duck.x, y - BTN.duck.y) < BTN.duck.r + 8) { touchDuck.add(e.pointerId); G.duck = true; return; }
+      if (Math.hypot(x - BTN.duck.x, y - BTN.duck.y) < BTN.duck.r + 14) {
+        if (G.duckLock) { G.duckLock = false; G.duck = false; return; }
+        touchDuck.add(e.pointerId); duckDownAt = performance.now(); G.duck = true; return;
+      }
       if (Math.hypot(x - BTN.reload.x, y - BTN.reload.y) < BTN.reload.r + 8) { reload(); return; }
     }
     G.mx = x; G.my = y; G.down = true; G.pressed = true;
   });
   hud.addEventListener('pointermove', e => { if (touchDuck.has(e.pointerId)) return; const [x, y] = toGame(e); G.mx = x; G.my = y; });
-  window.addEventListener('pointerup', e => { if (touchDuck.has(e.pointerId)) { touchDuck.delete(e.pointerId); if (!touchDuck.size) G.duck = false; return; } G.down = false; });
-  window.addEventListener('pointercancel', e => { touchDuck.delete(e.pointerId); if (!touchDuck.size) G.duck = false; G.down = false; });
+  window.addEventListener('pointerup', e => { if (touchDuck.has(e.pointerId)) { touchDuck.delete(e.pointerId); if (!touchDuck.size) { if (performance.now() - duckDownAt < 260) { G.duckLock = true; if (!L.lockTip) { L.lockTip = true; hint('נעול במחסה. הקשה נוספת על הכפתור כדי לקום'); } } else G.duck = false; } return; } G.down = false; });
+  window.addEventListener('pointercancel', e => { touchDuck.delete(e.pointerId); if (!touchDuck.size && !G.duckLock) G.duck = false; G.down = false; });
   hud.addEventListener('contextmenu', e => e.preventDefault());
   hud.addEventListener('wheel', e => { if (G.screen === 'play') { e.preventDefault(); cycle(e.deltaY > 0 ? 1 : -1); } }, { passive: false });
   const DUCK_KEYS = ['Space', 'ShiftLeft', 'ShiftRight', 'KeyC'];
