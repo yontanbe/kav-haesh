@@ -1191,10 +1191,11 @@
     $('end-title').textContent = isBest ? 'שיא חדש!' : 'השלב הושלם';
     $('end-stars').innerHTML = [0, 1, 2].map(i => `<span class="star ${i < stars ? 'on' : ''}">★</span>`).join('');
     $('end-stats').innerHTML = [['ניקוד', L.score.toLocaleString('he-IL')], ['דיוק', Math.round(acc * 100) + '%'], ['נוטרלו', L.kills], ['פגיעות ראש', L.heads], ['ניטרולים', L.neutral], ['כדורים שנבלמו במחסה', L.blocked]].map(([k, v]) => `<div class="stat"><span>${k}</span><b>${v}</b></div>`).join('');
+    shareText = `סיימתי את שלב ${LEVEL_NO}, ${LD.name}, בקו האש עם ${L.score.toLocaleString('he-IL')} נקודות ו${['כוכב אחד', 'שני כוכבים', 'שלושה כוכבים'][stars - 1]} ברמה ${DIFF.name}. נראה אותך עושה יותר:`;
     $('end-story').textContent = fill(LD.debrief) + (LEVEL_NO === LEVELS.length ? '\n\n' + fill(window.CAMPAIGN67.outro) : '');
     showScreen('end');
   }
-  function gameOver() { G.screen = 'end'; S.stopMusic(); $('next').hidden = true; $('retry-cp').hidden = !checkpoint(); $('retry-cp').textContent = `נסה שוב מאזור ${L.scene + 1}`; $('end-title').textContent = 'נפגעת'; $('end-stars').innerHTML = ''; $('end-stats').innerHTML = `<div class="stat"><span>ניקוד</span><b>${L.score.toLocaleString('he-IL')}</b></div><div class="stat"><span>אזור</span><b>${L.scene + 1} מתוך ${NSC}</b></div>`; $('end-story').textContent = `רפי גורר אותך מאחורי שק חול. אל תדאג, ${NAME}, ההתקדמות שמורה מתחילת האזור. טיפ: התכופף כשהטבעת על האויב נהיית אדומה.`; showScreen('end'); }
+  function gameOver() { shareText = `הגעתי לאזור ${L.scene + 1} בשלב ${LEVEL_NO}, ${LD.name}, בקו האש עם ${L.score.toLocaleString('he-IL')} נקודות. נראה אותך מגיע רחוק יותר:`; G.screen = 'end'; S.stopMusic(); $('next').hidden = true; $('retry-cp').hidden = !checkpoint(); $('retry-cp').textContent = `נסה שוב מאזור ${L.scene + 1}`; $('end-title').textContent = 'נפגעת'; $('end-stars').innerHTML = ''; $('end-stats').innerHTML = `<div class="stat"><span>ניקוד</span><b>${L.score.toLocaleString('he-IL')}</b></div><div class="stat"><span>אזור</span><b>${L.scene + 1} מתוך ${NSC}</b></div>`; $('end-story').textContent = `רפי גורר אותך מאחורי שק חול. אל תדאג, ${NAME}, ההתקדמות שמורה מתחילת האזור. טיפ: התכופף כשהטבעת על האויב נהיית אדומה.`; showScreen('end'); }
 
   // ---------- קלט ----------
   function toGame(e) { const r = hud.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
@@ -1246,6 +1247,15 @@
   $('go').onclick = () => { S.init(); if (PF) { PROFILE.level(PF, LV).checkpoint = null; PROFILE.save(PF); } startGame(); };
   $('resume').onclick = () => { S.init(); startGame(checkpoint()); };
   $('again').onclick = () => reloadInto('new');
+  let shareText = '';
+  const SHARE_URL = 'https://yontanbe.github.io/kav-haesh/';
+  $('share').onclick = async () => {
+    const b = $('share');
+    if (navigator.share) { try { await navigator.share({ title: 'קו האש', text: shareText, url: SHARE_URL }); } catch (e) { } return; }
+    try { await navigator.clipboard.writeText(shareText + ' ' + SHARE_URL); b.textContent = 'הועתק, אפשר להדביק'; }
+    catch (e) { b.textContent = 'לא הצלחתי להעתיק'; }
+    setTimeout(() => { b.textContent = 'שתף'; }, 2500);
+  };
   $('retry-cp').onclick = () => reloadInto('checkpoint');
   $('next').onclick = () => { location.href = 'play.html?l=' + (LEVEL_NO + 1); };
   $('p-resume').onclick = () => resumeGame();

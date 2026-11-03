@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>קו האש</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#0c0d0a">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="קו האש">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="he_IL">
+<meta property="og:site_name" content="קו האש">
+<meta property="og:title" content="קו האש: משחק יריות ישראלי בדפדפן">
+<meta property="og:description" content="ששת הימים, עשרה שלבים, תלת מימד וקולות בעברית. משחקים בחינם, בלי התקנה.">
+<meta property="og:image" content="https://yontanbe.github.io/kav-haesh/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://yontanbe.github.io/kav-haesh/">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="קו האש: משחק יריות ישראלי בדפדפן, בתלת מימד עם אמנות מצוירת.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -188,6 +205,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
       <div class="actions">
         <a class="btn" id="cta" href="play.html?l=1">התחל: בסיס האימונים</a>
         <a class="btn ghost" href="#levels">כל השלבים</a>
+        <button class="btn ghost" id="install" type="button" hidden>התקן כאפליקציה</button>
       </div>
       <span class="saveline" id="saveline">ההתקדמות נשמרת בדפדפן הזה, בתחילת כל אזור.</span>
     </div>
@@ -203,7 +221,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
   </div>
 
   <section class="block" id="levels">
-    <div class="block-h"><h2>ששת הימים</h2><p>עשרה שלבים ברצף. כל שלב נפתח כשמסיימים את הקודם, ושני הראשונים פתוחים מההתחלה. כל שלב מחולק לאזורים, וההתקדמות נשמרת בתחילת כל אזור.</p></div>
+    <div class="block-h"><h2>ששת הימים</h2><p>עשרה שלבים ברצף. כל שלב נפתח כשמסיימים את הקודם, ושני הראשונים פתוחים מההתחלה. כל שלב מחולק לאזורים, וההתקדמות נשמרת בתחילת כל אזור. המשחק בדיוני ובהשראה היסטורית: הדמויות, היחידות והקרבות אינם אמיתיים.</p></div>
     <div class="levels" id="levelgrid"></div>
     <div class="camps">
       <article class="camp" style="--ca: #d8423a"><span class="yr">1974</span><h3>הצבא השחור</h3><p>עולם חלופי. סיירת הנץ מחלצת מדענים מהאי של הגנרל ואלק.</p><span class="chip">בגרסה הקלאסית</span></article>
@@ -301,11 +319,12 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
 
 <footer>
   <div class="wrap">
-    <span>קו האש · משחק מקורי · כל הדמויות והגופים בדויים</span>
+    <span>קו האש · משחק מקורי בהשראה היסטורית. העלילה, הדמויות, היחידות והקרבות בדויים, ואינם מתארים אירועים או אנשים אמיתיים · קוד ברישיון MIT</span>
     <span>קוד: <a href="https://github.com/yontanbe/kav-haesh" target="_blank" rel="noopener">github.com/yontanbe/kav-haesh</a></span>
   </div>
 </footer>
 
+<script>if ('serviceWorker' in navigator && /github\.io$|^localhost$|^127\./.test(location.hostname)) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 <script src="profile.js"></script>
 <script src="levels67.js"></script>
 <script src="board.js"></script>
@@ -369,6 +388,9 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
   $('reset').addEventListener('click', () => { $('confirm').hidden = false; $('reset').hidden = true; });
   $('reset-no').addEventListener('click', () => { $('confirm').hidden = true; $('reset').hidden = false; });
   $('reset-yes').addEventListener('click', () => { PROFILE.reset(); P = PROFILE.load(); $('confirm').hidden = true; $('reset').hidden = false; render(); toast('ההתקדמות נמחקה'); });
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('install').hidden = false; });
+  $('install').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(() => {}); installEvt = null; $('install').hidden = true; });
   window.addEventListener('pageshow', () => { P = PROFILE.load(); render(); });
   render();
 })();
