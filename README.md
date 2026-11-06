@@ -5,6 +5,12 @@
 
 **לשחק עכשיו:** https://yontanbe.github.io/kav-haesh/
 
+**איך בנינו את זה עם AI, בלי לכתוב קוד:** [המאמר המלא על קו האש ומבצע מדבר 1973](https://theailazyleader.com/he/blog/israeli-browser-games-ai-kav-haesh-1973-hebrew)
+
+**משחק אחות:** [מבצע מדבר 1973](https://github.com/yontanbe/israel-rts-1973), אסטרטגיה בזמן אמת על מלחמת יום הכיפורים. [לשחק](https://yontanbe.github.io/israel-rts-1973/)
+
+⭐ נהניתם? תנו כוכב לריפו (כפתור Star למעלה). זה עוזר לעוד אנשים למצוא את המשחק.
+
 ![עמוד הבית](docs/screenshots/home.jpg)
 
 ## צילומי מסך

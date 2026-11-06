@@ -160,6 +160,11 @@ pre.cmd { margin: 0; background: #090a07; border: 1px solid var(--line); border-
 .btn.warn { background: var(--ember); color: #fff; }
 .toast { color: var(--ok); font-size: 15px; }
 
+.ghstar { flex: none; display: inline-flex; align-items: center; gap: 6px; background: var(--amber); color: #14110a; font-weight: 800; font-size: 14px; text-decoration: none; padding: 7px 14px; border-radius: 999px; white-space: nowrap; }
+.ghstar:hover { filter: brightness(1.08); }
+.nav nav + .ghstar { margin-inline-start: 0; }
+.xlinks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.xlinks a { color: var(--amber); }
 footer { margin-top: 80px; border-top: 1px solid var(--line); padding-block: 28px calc(28px + env(safe-area-inset-bottom, 0px)); color: var(--mute); font-size: 15px; }
 footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
 
@@ -183,6 +188,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
   <div class="wrap">
     <a class="logo" href="#top">קו <span>האש</span></a>
     <nav aria-label="ניווט ראשי"><a href="#levels">השלבים</a><a href="#achievements">הישגים</a><a href="#board">טבלת שיאים</a><a href="#controls">איך משחקים</a><a href="#project">על הפרויקט</a><a href="#settings">הגדרות</a></nav>
+    <a class="ghstar" href="https://github.com/yontanbe/kav-haesh" target="_blank" rel="noopener" aria-label="תנו כוכב לריפו בגיטהאב">⭐ כוכב בגיטהאב</a>
   </div>
 </header>
 
@@ -275,6 +281,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
           <li><b>שמירה:</b> שם, הגדרות, רמת קושי, שיאים, כוכבים, הישגים ונקודת ביקורת בכל אזור, בדפדפן.</li>
           <li><b>טבלת שיאים משותפת</b> דרך מאגר הנתונים של העמוד המשותף ב־claude.ai.</li>
         </ul>
+        <p>רוצים לדעת איך הוא נבנה עם AI, בלי לכתוב קוד? <a href="https://theailazyleader.com/he/blog/israeli-browser-games-ai-kav-haesh-1973-hebrew" target="_blank" rel="noopener">המאמר המלא: איך בנינו את קו האש ומבצע מדבר 1973</a>. ואם נהניתם, <a href="https://github.com/yontanbe/kav-haesh" target="_blank" rel="noopener">תנו כוכב לריפו בגיטהאב</a>.</p>
         <p>להרצה מקומית צריך שרת קבצים פשוט:</p>
         <pre class="cmd">python3 -m http.server 8000</pre>
       </div>
@@ -320,7 +327,7 @@ footer .wrap { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space
 <footer>
   <div class="wrap">
     <span>קו האש · משחק מקורי בהשראה היסטורית. העלילה, הדמויות, היחידות והקרבות בדויים, ואינם מתארים אירועים או אנשים אמיתיים · קוד ברישיון MIT</span>
-    <span>קוד: <a href="https://github.com/yontanbe/kav-haesh" target="_blank" rel="noopener">github.com/yontanbe/kav-haesh</a></span>
+    <span>קוד: <a href="https://github.com/yontanbe/kav-haesh" target="_blank" rel="noopener">github.com/yontanbe/kav-haesh</a> · <a href="https://theailazyleader.com/he/blog/israeli-browser-games-ai-kav-haesh-1973-hebrew" target="_blank" rel="noopener">איך בנינו את זה</a> · משחק נוסף: <a href="https://yontanbe.github.io/israel-rts-1973/" target="_blank" rel="noopener">מבצע מדבר 1973</a></span>
   </div>
 </footer>
 
